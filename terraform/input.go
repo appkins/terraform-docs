@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/terraform-docs/terraform-docs/internal/types"
-	"github.com/terraform-docs/terraform-docs/print"
 )
 
 // Input represents a Terraform input.
@@ -88,23 +87,4 @@ func sortInputsByType(x []*Input) {
 		}
 		return x[i].Type < x[j].Type
 	})
-}
-
-type inputs []*Input
-
-func (ii inputs) sort(enabled bool, by string) {
-	if !enabled {
-		sortInputsByPosition(ii)
-	} else {
-		switch by {
-		case print.SortType:
-			sortInputsByType(ii)
-		case print.SortRequired:
-			sortInputsByRequired(ii)
-		case print.SortName:
-			sortInputsByName(ii)
-		default:
-			sortInputsByPosition(ii)
-		}
-	}
 }

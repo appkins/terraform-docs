@@ -65,7 +65,7 @@ func loadModuleItems(tfmodule *tfconfig.Module, config *print.Config) (*Module, 
 		return nil, err
 	}
 
-	inputs, required, optional := loadInputs(tfmodule, config)
+	inputs := loadInputs(tfmodule, config)
 	modulecalls := loadModulecalls(tfmodule, config)
 	outputs, err := loadOutputs(tfmodule, config)
 	if err != nil {
@@ -84,9 +84,6 @@ func loadModuleItems(tfmodule *tfconfig.Module, config *print.Config) (*Module, 
 		Providers:    providers,
 		Requirements: requirements,
 		Resources:    resources,
-
-		RequiredInputs: required,
-		OptionalInputs: optional,
 	}, nil
 }
 
@@ -182,12 +179,22 @@ func loadSection(config *print.Config, file string, section string) (string, err
 	return strings.Join(sectionText, "\n"), nil
 }
 
-func loadInputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Input, []*Input, []*Input) {
-	var inputs = make([]*Input, 0, len(tfmodule.Variables))
-	var required = make([]*Input, 0, len(tfmodule.Variables))
-	var optional = make([]*Input, 0, len(tfmodule.Variables))
+func loadInputs(tfmodule *tfconfig.Module, config *print.Config) (icol []*InputCollection) {
+	var inputs = &InputCollection{
+		Name:   "default",
+		Inputs: make([]*Input, 0),
+	}
+	var required = &InputCollection{
+		Name:   "required",
+		Inputs: make([]*Input, 0),
+	}
+	var optional = &InputCollection{
+		Name:   "optional",
+		Inputs: make([]*Input, 0),
+	}
 
 	for _, input := range tfmodule.Variables {
+
 		// convert CRLF to LF early on (https://github.com/terraform-docs/terraform-docs/issues/305)
 		inputDescription := strings.ReplaceAll(input.Description, "\r\n", "\n")
 		if inputDescription == "" && config.Settings.ReadComments {
@@ -210,16 +217,18 @@ func loadInputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Input, []*I
 			},
 		}
 
-		inputs = append(inputs, i)
+		inputs.Append(i)
 
 		if i.HasDefault() {
-			optional = append(optional, i)
+			optional.Append(i)
 		} else {
-			required = append(required, i)
+			required.Append(i)
 		}
 	}
 
-	return inputs, required, optional
+	icol = append(icol, inputs)
+
+	return icol
 }
 
 func formatSource(s, v string) (source, version string) {
@@ -511,8 +520,8 @@ func loadComments(filename string, lineNum int) string {
 func sortItems(tfmodule *Module, config *print.Config) {
 	// inputs
 	inputs(tfmodule.Inputs).sort(config.Sort.Enabled, config.Sort.By)
-	inputs(tfmodule.RequiredInputs).sort(config.Sort.Enabled, config.Sort.By)
-	inputs(tfmodule.OptionalInputs).sort(config.Sort.Enabled, config.Sort.By)
+	//inputs(tfmodule.RequiredInputs).sort(config.Sort.Enabled, config.Sort.By)
+	//inputs(tfmodule.OptionalInputs).sort(config.Sort.Enabled, config.Sort.By)
 
 	// outputs
 	outputs(tfmodule.Outputs).sort(config.Sort.Enabled, config.Sort.By)

@@ -6,18 +6,29 @@ import (
 	"strings"
 
 	"github.com/terraform-docs/terraform-docs/internal/types"
+	"github.com/terraform-docs/terraform-docs/print"
 )
 
 // Input represents a Terraform input.
 type InputCollection struct {
-	Name   string   `json:"name" toml:"name" xml:"name" yaml:"name"`
-	Inputs []*Input `json:"inputs" toml:"inputs" xml:"inputs" yaml:"inputs"`
+	Name           string   `json:"name" toml:"name" xml:"name" yaml:"name"`
+	Inputs         []*Input `json:"inputs" toml:"inputs" xml:"inputs" yaml:"inputs"`
+	RequiredInputs []*Input `json:"-" toml:"-" xml:"-" yaml:"-"`
+	OptionalInputs []*Input `json:"-" toml:"-" xml:"-" yaml:"-"`
 }
 
 // Collection -> Collection.next -> Recurse
 
-func (ic *InputCollection) Append(input *Input) {
-	ic.Inputs = append(ic.Inputs, input)
+func (ic *InputCollection) Append(inputs ...*Input) {
+	ic.Inputs = append(ic.Inputs, inputs...)
+
+	for _, i := range inputs {
+		if i.HasDefault() {
+			ic.OptionalInputs = append(ic.OptionalInputs, i)
+		} else {
+			ic.RequiredInputs = append(ic.RequiredInputs, i)
+		}
+	}
 }
 
 func extractTypeDescriptor(line string) (propType string, desc string) {
@@ -92,34 +103,33 @@ func CreateInputCollection(scanner *bufio.Scanner, name string) (collections []*
 	pos := 0
 	for startPos, end, input := parseLine(scanner.Text()); scanner.Scan() && (!end && pos == startPos); pos, end, input = parseLine(scanner.Text()) {
 		if input != nil {
-			collection.Inputs = append(collection.Inputs, input)
+			collection.Append(input)
 		}
 		if strings.HasSuffix(scanner.Text(), "({") {
 			collections = append(collections, CreateInputCollection(scanner, input.Name)...)
 		}
 	}
 	return collections
-	/* input, startPos := parseInput(scanner.Text())
-	if input.Type == "object" {
+}
 
-	}
-	if strings.HasSuffix(scanner.Text(), "({") {
-		for scanner.Scan() {
-			line := scanner.Text()
-			//println("FIELDS: ", strings.Fields(line))
+type inputs []*InputCollection
 
-			// Closing object ends recursion
-			if strings.HasPrefix("}", strings.TrimLeft(" ", line)) && countLeadingSpaces(line) == startPos {
-				break
+func (ii inputs) sort(enabled bool, by string) {
+	for _, input := range ii {
+		if !enabled {
+			sortInputsByPosition(input.Inputs)
+		} else {
+			switch by {
+			case print.SortType:
+				sortInputsByType(input.Inputs)
+			case print.SortRequired:
+				sortInputsByRequired(input.Inputs)
+			case print.SortName:
+				sortInputsByName(input.Inputs)
+			default:
+				sortInputsByPosition(input.Inputs)
 			}
-			// Recurse for node with children
-			if strings.HasSuffix(line, "({") {
-				input.Children = append(input.Children, CreateInputCollection(scanner))
-			} else if ivar := parseInput(line); ivar.Name != "" && strings.TrimSpace(line) != "" {
-				input.Children = append(input.Children, ivar)
-			}
-
 		}
+
 	}
-	return input */
 }
