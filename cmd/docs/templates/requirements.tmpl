@@ -1,0 +1,21 @@
+{{- define "requirements" }}
+
+## Requirements
+
+This module requires the following versions to be configured in the workspace terraform {} block.
+
+### Terraform
+
+|       **Version**       |
+| :---------------------: |
+| {{ tfv .RequiredCore }} |
+
+### Providers
+
+| **Name**       | **Version**      |
+| :------------- | :--------------- |
+{{- range $name, $version := .RequiredProviders }}
+| {{ $version.Source }} | {{ tfv $version.VersionConstraints }} |
+{{- end}}
+
+{{- end }}

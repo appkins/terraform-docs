@@ -1,0 +1,11 @@
+{{- define "outputs" -}}
+## Outputs
+
+***
+
+| **Variable** | **Description** | **Type** |
+| :----------- | :-------------- | :------: |
+{{- range .Outputs }}
+| {{ tt .Name }} | {{ or .Description "" }} | `string` |
+{{- end }}
+{{ end }}

@@ -1,0 +1,15 @@
+{{ include "docs/overview.md" }}
+---
+{{ include "docs/support.md" | tmd }}
+---
+{{ include "docs/architecture.md" | tmd }}
+---
+{{ include "docs/usage.md" | tmd }}
+---
+{{ include "docs/experimental-features.md" | tmd }}
+---
+{{ template "requirements" . }}
+
+{{ template "inputs" . }}
+
+{{ template "outputs" . }}

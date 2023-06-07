@@ -1,0 +1,46 @@
+{{- define "table-header" -}}
+| **Variable** | **Description** | **Type** | **Default** |
+| :----------- | :-------------- | :------: | :---------- |
+{{- end -}}
+
+{{ define "table" }}
+{{ template "table-header" }}
+{{- range . }}
+{{- if .Name }}
+| {{ tt .Name }} | {{ or .Description "" }} | {{ ttype .Type .Name }} | {{ df . }} |
+{{- end }}
+{{- end}}
+{{ end }}
+
+{{ define "section-header" }}
+### {{ title .Name }}
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+{{ end }}
+
+{{- define "inputs" }}
+
+{{- if .Variables}}
+
+## Input Variables
+
+{{ template "table" .Variables }}
+
+{{- range .Variables }}
+{{- if .Children }}
+{{ template "section-header" . }}
+{{ template "table" .Children }}
+{{end}}{{end}}
+
+{{- range .Variables }}
+{{- range .Children}}
+{{- if .Children }}
+{{ template "section-header" . }}
+{{ template "table" .Children }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- end}}
+{{- end }}

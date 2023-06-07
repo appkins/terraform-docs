@@ -83,7 +83,7 @@ func (h *tfvarsHCL) Generate(module *terraform.Module) error {
 
 func isMultilineFormat(input *terraform.Input) bool {
 	isList := input.Type == "list" || reflect.TypeOf(input.Default).Name() == "List"
-	isMap := input.Type == "map" || reflect.TypeOf(input.Default).Name() == "Map"
+	isMap := input. == "map" || reflect.TypeOf(input.Default).Name() == "Map"
 	return (isList || isMap) && input.Default.Length() > 0
 }
 

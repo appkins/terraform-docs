@@ -194,6 +194,10 @@ func loadInputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Input, []*I
 			inputDescription = loadComments(input.Pos.Filename, input.Pos.Line)
 		}
 
+		if input.Type == "object" {
+
+		}
+
 		i := &Input{
 			Name:        input.Name,
 			Type:        types.TypeOf(input.Type, input.Default),
