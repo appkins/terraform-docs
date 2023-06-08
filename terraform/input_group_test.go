@@ -79,6 +79,16 @@ func Test_parseInput(t *testing.T) {
 				Default:     types.ValueOf("funny"),
 			},
 		},
+		{
+			name: "input Value and HasDefault",
+			args: args{s: "foo_bar = optional(map(string), { one = \"Hi\" }) # map of string description"},
+			want: &Input{
+				Name:        "foo_bar",
+				Type:        "map(string)",
+				Description: "map of string description",
+				Default:     types.ValueOf("{ one = \"Hi\" }"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
