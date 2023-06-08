@@ -70,7 +70,7 @@ func TestCommonSort(t *testing.T) {
 			err = jsonsdk.Unmarshal([]byte(golden), &expected)
 			assert.Nil(err)
 
-			for ii, i := range module.Inputs {
+			for ii, i := range module.InputGroups {
 				assert.Equal(expected.Inputs[ii], i.Name)
 			}
 			for ii, m := range module.ModuleCalls {

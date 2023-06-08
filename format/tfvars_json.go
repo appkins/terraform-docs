@@ -40,8 +40,10 @@ func NewTfvarsJSON(config *print.Config) Type {
 func (j *tfvarsJSON) Generate(module *terraform.Module) error {
 	copy := orderedmap.New()
 	copy.SetEscapeHTML(false)
-	for _, i := range module.Inputs {
-		copy.Set(i.Name, i.Default)
+	for _, v := range module.InputGroups {
+		for _, i := range v.Inputs {
+			copy.Set(i.Name, i.Default)
+		}
 	}
 
 	buffer := new(bytes.Buffer)

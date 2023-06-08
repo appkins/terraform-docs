@@ -78,7 +78,7 @@ func loadModuleItems(tfmodule *tfconfig.Module, config *print.Config) (*Module, 
 	return &Module{
 		Header:       header,
 		Footer:       footer,
-		Inputs:       inputs,
+		InputGroups:  inputs,
 		ModuleCalls:  modulecalls,
 		Outputs:      outputs,
 		Providers:    providers,
@@ -179,17 +179,9 @@ func loadSection(config *print.Config, file string, section string) (string, err
 	return strings.Join(sectionText, "\n"), nil
 }
 
-func loadInputs(tfmodule *tfconfig.Module, config *print.Config) (icol []*InputCollection) {
-	var inputs = &InputCollection{
+func loadInputs(tfmodule *tfconfig.Module, config *print.Config) (icol []*InputGroup) {
+	var inputs = &InputGroup{
 		Name:   "default",
-		Inputs: make([]*Input, 0),
-	}
-	var required = &InputCollection{
-		Name:   "required",
-		Inputs: make([]*Input, 0),
-	}
-	var optional = &InputCollection{
-		Name:   "optional",
 		Inputs: make([]*Input, 0),
 	}
 
@@ -218,12 +210,6 @@ func loadInputs(tfmodule *tfconfig.Module, config *print.Config) (icol []*InputC
 		}
 
 		inputs.Append(i)
-
-		if i.HasDefault() {
-			optional.Append(i)
-		} else {
-			required.Append(i)
-		}
 	}
 
 	icol = append(icol, inputs)
@@ -519,7 +505,7 @@ func loadComments(filename string, lineNum int) string {
 
 func sortItems(tfmodule *Module, config *print.Config) {
 	// inputs
-	inputs(tfmodule.Inputs).sort(config.Sort.Enabled, config.Sort.By)
+	inputs(tfmodule.InputGroups).sort(config.Sort.Enabled, config.Sort.By)
 	//inputs(tfmodule.RequiredInputs).sort(config.Sort.Enabled, config.Sort.By)
 	//inputs(tfmodule.OptionalInputs).sort(config.Sort.Enabled, config.Sort.By)
 

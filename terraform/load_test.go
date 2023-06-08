@@ -982,7 +982,7 @@ func TestSortItems(t *testing.T) {
 			assert.Nil(err)
 			sortItems(module, config)
 
-			for _, v := range module.Inputs {
+			for _, v := range module.InputGroups {
 				for i, vv := range v.Inputs {
 					assert.Equal(tt.expected.inputs[i], vv.Name)
 				}

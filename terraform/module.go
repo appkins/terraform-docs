@@ -18,14 +18,14 @@ import (
 type Module struct {
 	XMLName xml.Name `json:"-" toml:"-" xml:"module" yaml:"-"`
 
-	Header       string             `json:"header" toml:"header" xml:"header" yaml:"header"`
-	Footer       string             `json:"footer" toml:"footer" xml:"footer" yaml:"footer"`
-	Inputs       []*InputCollection `json:"inputs" toml:"inputs" xml:"inputs>input" yaml:"inputs"`
-	ModuleCalls  []*ModuleCall      `json:"modules" toml:"modules" xml:"modules>module" yaml:"modules"`
-	Outputs      []*Output          `json:"outputs" toml:"outputs" xml:"outputs>output" yaml:"outputs"`
-	Providers    []*Provider        `json:"providers" toml:"providers" xml:"providers>provider" yaml:"providers"`
-	Requirements []*Requirement     `json:"requirements" toml:"requirements" xml:"requirements>requirement" yaml:"requirements"`
-	Resources    []*Resource        `json:"resources" toml:"resources" xml:"resources>resource" yaml:"resources"`
+	Header       string         `json:"header" toml:"header" xml:"header" yaml:"header"`
+	Footer       string         `json:"footer" toml:"footer" xml:"footer" yaml:"footer"`
+	InputGroups  []*InputGroup  `json:"inputs" toml:"inputs" xml:"inputs>input" yaml:"inputs"`
+	ModuleCalls  []*ModuleCall  `json:"modules" toml:"modules" xml:"modules>module" yaml:"modules"`
+	Outputs      []*Output      `json:"outputs" toml:"outputs" xml:"outputs>output" yaml:"outputs"`
+	Providers    []*Provider    `json:"providers" toml:"providers" xml:"providers>provider" yaml:"providers"`
+	Requirements []*Requirement `json:"requirements" toml:"requirements" xml:"requirements>requirement" yaml:"requirements"`
+	Resources    []*Resource    `json:"resources" toml:"resources" xml:"resources>resource" yaml:"resources"`
 }
 
 // HasHeader indicates if the module has header.
@@ -40,7 +40,7 @@ func (m *Module) HasFooter() bool {
 
 // HasInputs indicates if the module has inputs.
 func (m *Module) HasInputs() bool {
-	return len(m.Inputs) > 0
+	return len(m.InputGroups) > 0
 }
 
 // HasModuleCalls indicates if the module has modulecalls.

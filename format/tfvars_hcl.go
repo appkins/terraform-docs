@@ -69,7 +69,9 @@ func NewTfvarsHCL(config *print.Config) Type {
 
 // Generate a Terraform module as Terraform tfvars HCL.
 func (h *tfvarsHCL) Generate(module *terraform.Module) error {
-	alignments(module.Inputs, h.config)
+	for _, input := range module.InputGroups {
+		alignments(input.Inputs, h.config)
+	}
 
 	rendered, err := h.template.Render("tfvars", module)
 	if err != nil {

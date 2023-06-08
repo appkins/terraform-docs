@@ -189,7 +189,7 @@ func TestGeneratorFuncModule(t *testing.T) {
 
 		assert.Equal(expected, generator.module.Header)
 		assert.Equal("", generator.module.Footer)
-		assert.Equal(7, len(generator.module.Inputs))
+		assert.Equal(7, len(generator.module.InputGroups))
 		assert.Equal(3, len(generator.module.Outputs))
 	})
 }
