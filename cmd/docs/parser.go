@@ -117,7 +117,7 @@ func CreateInputCollection(scanner *bufio.Scanner) (ip *InputVariable) {
 			// Recurse for node with children
 			if strings.HasSuffix(line, "({") {
 				ip.Children = append(ip.Children, CreateInputCollection(scanner))
-			} else if ivar := parseInput(line); ivar.Name != "" && strings.TrimSpace(line) != "" {
+			} else if ivar, _ := parseInput(line); ivar.Name != "" && strings.TrimSpace(line) != "" {
 				ip.Children = append(ip.Children, ivar)
 			}
 

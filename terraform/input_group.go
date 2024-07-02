@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"unicode"
 
@@ -45,10 +44,12 @@ func extractTypeDescriptor(line string) (propType string, desc string) {
 	// Split description from line comment
 	if strings.Contains(line, " # ") {
 		sp := strings.Split(line, " # ")
-		return sp[0], sp[1]
+		propType = sp[0]
+		desc = sp[1]
 	} else {
-		return line, ""
+		propType = line
 	}
+	return
 }
 
 func parseLine(s string) (pos int, end bool, input *Input, err error) {
@@ -68,19 +69,43 @@ func parseLine(s string) (pos int, end bool, input *Input, err error) {
 	return
 }
 
-func extractAttribute(s string) (name string, desc string, required bool, defaultValue string, attributeType string) {
+func extractAttribute(s string) (name string, desc string, required bool, defaultValue types.Value, attributeType string) {
 	if strings.Contains(s, " = ") {
-		v := strings.Split(s, " = ")
+		v := strings.SplitN(s, " = ", 2)
 		name = v[0]
 		attributeType, desc = extractTypeDescriptor(v[1])
 
-		if rxp, err := regexp.Compile(`optional\((.+)\)`); err == nil && rxp.MatchString(attributeType) {
+		if strings.Contains(attributeType, "optional") {
+			required = false
+			t := strings.TrimPrefix(attributeType, "optional(")
+			t = strings.TrimSuffix(t, ")")
+			if strings.Contains(t, ", ") {
+				dmatch := strings.Split(t, ", ")
+				attributeType = dmatch[0]
+				defaultValue = types.ValueOf(dmatch[1])
+			}
+		}
 
-			inner := rxp.FindAllStringSubmatch(attributeType, -1)[0][1]
+		/* if regex := regexp.MustCompile(`optional\((.{3,6})(?:\((.{3,6})\))?(?:,\s*(.*))?\)`); regex.MatchString(attributeType) {
+			required = false
+			matches := regex.FindStringSubmatch(attributeType)
+			if len(matches) >= 3 {
+				attributeType = matches[1]
+				defaultValue = types.ValueOf(matches[2])
+			} else {
+				fmt.Println("Invalid input")
+			}
+		} */
+
+		/* 	if rxp, err := regexp.Compile(`optional\((.+)\)$`); err == nil && rxp.MatchString(attributeType) {
+			matches := rxp.FindAllStringSubmatch(attributeType, -1)
+			inner := matches[0][1]
 
 			if strings.Contains(inner, ",") {
 				dmatch := strings.Split(inner, ",")
 				attributeType = dmatch[0]
+
+				defaultValue = types.ValueOf(dmatch[1])
 
 				dVal := strings.TrimSpace(dmatch[1])
 
@@ -91,7 +116,7 @@ func extractAttribute(s string) (name string, desc string, required bool, defaul
 				attributeType = inner
 			}
 			required = false
-		}
+		} */
 	}
 	return
 }
@@ -108,7 +133,7 @@ func parseInput(s string) (*Input, error) {
 		Name:        name,
 		Description: types.String(desc),
 		Type:        types.String(attributeType),
-		Default:     types.String(defaultValue),
+		Default:     defaultValue,
 		Required:    required,
 	}, nil
 }
