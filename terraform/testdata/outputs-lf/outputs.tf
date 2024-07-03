@@ -1,5 +1,5 @@
 output "multi-line-lf" {
-  value = "foo"
+  value       = "foo"
   description = <<-EOT
   The quick brown fox jumps
   over the lazy dog

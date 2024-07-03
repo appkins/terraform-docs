@@ -1,5 +1,5 @@
 output "multi-line-crlf" {
-  value = "foo"
+  value       = "foo"
   description = <<-EOT
   The quick brown fox jumps
   over the lazy dog

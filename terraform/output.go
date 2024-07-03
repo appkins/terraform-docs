@@ -17,13 +17,14 @@ import (
 	"sort"
 
 	"github.com/terraform-docs/terraform-docs/internal/types"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Output represents a Terraform output.
 type Output struct {
 	Name        string       `json:"name" toml:"name" xml:"name" yaml:"name"`
 	Description types.String `json:"description" toml:"description" xml:"description" yaml:"description"`
-	Value       types.Value  `json:"value,omitempty" toml:"value,omitempty" xml:"value,omitempty" yaml:"value,omitempty"`
+	Value       cty.Value    `json:"value,omitempty" toml:"value,omitempty" xml:"value,omitempty" yaml:"value,omitempty"`
 	Sensitive   bool         `json:"sensitive,omitempty" toml:"sensitive,omitempty" xml:"sensitive,omitempty" yaml:"sensitive,omitempty"`
 	Position    Position     `json:"-" toml:"-" xml:"-" yaml:"-"`
 	ShowValue   bool         `json:"-" toml:"-" xml:"-" yaml:"-"`
@@ -32,7 +33,7 @@ type Output struct {
 type withvalue struct {
 	Name        string       `json:"name" toml:"name" xml:"name" yaml:"name"`
 	Description types.String `json:"description" toml:"description" xml:"description" yaml:"description"`
-	Value       types.Value  `json:"value" toml:"value" xml:"value" yaml:"value"`
+	Value       cty.Value    `json:"value" toml:"value" xml:"value" yaml:"value"`
 	Sensitive   bool         `json:"sensitive" toml:"sensitive" xml:"sensitive" yaml:"sensitive"`
 	Position    Position     `json:"-" toml:"-" xml:"-" yaml:"-"`
 	ShowValue   bool         `json:"-" toml:"-" xml:"-" yaml:"-"`
@@ -42,7 +43,7 @@ type withvalue struct {
 // If 'Value' is a primitive type, the primitive value of 'Value' will be returned
 // and not the JSON formatted of it.
 func (o *Output) GetValue() string {
-	if !o.ShowValue || o.Value == nil {
+	if !o.ShowValue || o.Value.IsNull() {
 		return ""
 	}
 	marshaled, err := json.MarshalIndent(o.Value, "", "  ")
@@ -58,10 +59,10 @@ func (o *Output) GetValue() string {
 
 // HasDefault indicates if a Terraform output has a default value set.
 func (o *Output) HasDefault() bool {
-	if !o.ShowValue || o.Value == nil {
+	if !o.ShowValue || o.Value.IsNull() {
 		return false
 	}
-	return o.Value.HasDefault()
+	return !o.Value.Type().Equals(cty.NilType)
 }
 
 // MarshalJSON custom yaml marshal function to take '--output-values' flag into
@@ -81,8 +82,8 @@ func (o *Output) MarshalJSON() ([]byte, error) {
 	if o.ShowValue {
 		return fn(withvalue(*o))
 	}
-	o.Value = nil       // explicitly make empty
-	o.Sensitive = false // explicitly make empty
+	o.Value = cty.NilVal // explicitly make empty
+	o.Sensitive = false  // explicitly make empty
 	return fn(*o)
 }
 
@@ -115,16 +116,16 @@ func (o *Output) MarshalYAML() (interface{}, error) {
 	if o.ShowValue {
 		return withvalue(*o), nil
 	}
-	o.Value = nil       // explicitly make empty
-	o.Sensitive = false // explicitly make empty
+	o.Value = cty.NilVal // explicitly make empty
+	o.Sensitive = false  // explicitly make empty
 	return *o, nil
 }
 
 // output is used for unmarshalling `terraform outputs --json` into
 type output struct {
-	Sensitive bool        `json:"sensitive"`
-	Type      interface{} `json:"type"`
-	Value     interface{} `json:"value"`
+	Sensitive bool      `json:"sensitive"`
+	Type      cty.Type  `json:"type"`
+	Value     cty.Value `json:"value"`
 }
 
 func sortOutputsByName(x []*Output) {
@@ -136,7 +137,7 @@ func sortOutputsByName(x []*Output) {
 func sortOutputsByPosition(x []*Output) {
 	sort.Slice(x, func(i, j int) bool {
 		if x[i].Position.Filename == x[j].Position.Filename {
-			return x[i].Position.Line < x[j].Position.Line
+			return x[i].Position.Start.Line < x[j].Position.Start.Line
 		}
 		return x[i].Position.Filename < x[j].Position.Filename
 	})

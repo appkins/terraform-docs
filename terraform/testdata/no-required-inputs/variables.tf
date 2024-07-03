@@ -13,16 +13,16 @@ variable "E" {
 
 # A Description
 # in multiple lines
-variable A {
+variable "A" {
   default = "a"
 }
 
 variable "C" {
   description = "C description"
-  default = "c"
+  default     = "c"
 }
 
 variable "F" {
   description = "F description"
-  default = "f"
+  default     = "f"
 }

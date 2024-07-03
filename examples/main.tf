@@ -44,7 +44,7 @@ terraform {
     random = ">= 2.2.0"
     aws    = ">= 2.15.0"
     foo = {
-      source  = "https://registry.acme.com/foo"
+      source  = "registry.acme.com/bar/foo"
       version = ">= 1.0"
     }
   }
@@ -78,18 +78,18 @@ resource "null_resource" "foo" {}
 resource "null_resource" "ignored" {}
 
 module "bar" {
-  source  = "baz"
+  source  = "foo/bar/baz"
   version = "4.5.6"
 }
 
 # another type of description for module foo
 module "foo" {
-  source  = "bar"
+  source  = "foo/bar/baz"
   version = "1.2.3"
 }
 
 module "baz" {
-  source  = "baz"
+  source  = "registry.acme.com/foo/bar/baz"
   version = "4.5.6"
 }
 
@@ -99,6 +99,6 @@ module "foobar" {
 
 // terraform-docs-ignore
 module "ignored" {
-  source  = "foobaz"
+  source  = "foo/baz/foobaz"
   version = "7.8.9"
 }

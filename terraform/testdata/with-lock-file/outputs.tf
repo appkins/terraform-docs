@@ -1,4 +1,4 @@
-output C {
+output "C" {
   description = "It's unquoted output."
   value       = "c"
 }

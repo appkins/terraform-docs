@@ -8,7 +8,8 @@ require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.1
 	github.com/hashicorp/go-version v1.7.0
-	github.com/hashicorp/hcl/v2 v2.20.1
+	github.com/hashicorp/hcl/v2 v2.21.0
+	github.com/hashicorp/terraform-schema v0.0.0-20240625141129-f1e27d6f6b6b
 	github.com/iancoleman/orderedmap v0.3.0
 	github.com/imdario/mergo v0.3.16
 	github.com/mitchellh/go-homedir v1.1.0
@@ -35,6 +36,8 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/terraform-registry-address v0.2.3 // indirect
+	github.com/hashicorp/terraform-svchost v0.1.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -71,3 +74,7 @@ require (
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
+
+replace github.com/terraform-docs/terraform-docs => /Users/atkini01/src/go/terraform-docs
+
+replace github.com/hashicorp/terraform-schema => /Users/atkini01/src/go/terraform-schema

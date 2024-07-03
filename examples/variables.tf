@@ -1,6 +1,24 @@
-variable unquoted {}
+variable "unquoted" {}
+
+variable "object-1" {
+  type = object({
+    foo = optional(string)
+    bar = optional(string, "default")
+  })
+  description = "(optional) describe your variable"
+}
+
+variable "object-2" {
+  type = object({
+    foo = string
+    bar = string
+  })
+  description = "describe your variable"
+  default = null
+}
 
 variable "bool-3" {
+  type    = bool
   default = true
 }
 
@@ -25,7 +43,7 @@ variable "string-3" {
 
 variable "string-2" {
   description = "It's string number two."
-  type        = "string"
+  type        = string
 }
 
 // It's string number one.
@@ -49,7 +67,7 @@ variable "number-4" {
 
 variable "number-2" {
   description = "It's number number two."
-  type        = "number"
+  type        = number
 }
 
 // It's number number one.
@@ -63,7 +81,7 @@ variable "map-3" {
 
 variable "map-2" {
   description = "It's map number two."
-  type        = "map"
+  type        = map(string)
 }
 
 // It's map number one.
@@ -74,7 +92,7 @@ variable "map-1" {
     c = 3
   }
 
-  type = "map"
+  type = map(string)
 }
 
 variable "list-3" {
@@ -83,13 +101,13 @@ variable "list-3" {
 
 variable "list-2" {
   description = "It's list number two."
-  type        = "list"
+  type        = list(string)
 }
 
 // It's list number one.
 variable "list-1" {
   default = ["a", "b", "c"]
-  type    = "list"
+  type    = list(string)
 }
 
 // A variable with underscores.

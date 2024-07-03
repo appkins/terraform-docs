@@ -17,13 +17,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsimple"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/hashicorp/terraform-schema/earlydecoder"
+	"github.com/hashicorp/terraform-schema/module"
+	"github.com/zclconf/go-cty/cty"
 
-	"github.com/terraform-docs/terraform-config-inspect/tfconfig"
 	"github.com/terraform-docs/terraform-docs/internal/reader"
 	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
@@ -45,15 +48,47 @@ func LoadWithOptions(config *print.Config) (*Module, error) {
 	return module, nil
 }
 
-func loadModule(path string) (*tfconfig.Module, error) {
-	module, diag := tfconfig.LoadModule(path)
+func loadModule(path string) (*module.Meta, error) {
+	files := map[string]*hcl.File{}
+
+	if !filepath.IsAbs(path) {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, err
+		}
+		path = absPath
+	}
+
+	filepattern := path + "/*.tf"
+	filePaths, err := filepath.Glob(filepattern)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, filePath := range filePaths {
+		fileContent, err := os.ReadFile(filePath)
+		if err != nil {
+			panic(err)
+		}
+		fileName := filepath.Base(filePath)
+
+		f, diags := hclsyntax.ParseConfig(fileContent, fileName, hcl.InitialPos)
+		if len(diags) > 0 {
+			panic(diags)
+		}
+
+		files[fileName] = f
+	}
+
+	mod, diag := earlydecoder.LoadModule(path, files)
+
 	if diag != nil && diag.HasErrors() {
 		return nil, diag
 	}
-	return module, nil
+	return mod, nil
 }
 
-func loadModuleItems(tfmodule *tfconfig.Module, config *print.Config) (*Module, error) {
+func loadModuleItems(tfmodule *module.Meta, config *print.Config) (*Module, error) {
 	header, err := loadHeader(config)
 	if err != nil {
 		return nil, err
@@ -64,7 +99,7 @@ func loadModuleItems(tfmodule *tfconfig.Module, config *print.Config) (*Module, 
 		return nil, err
 	}
 
-	inputs, required, optional := loadInputs(tfmodule, config)
+	inputs, required, optional, attributes := loadInputs(tfmodule, config)
 	modulecalls := loadModulecalls(tfmodule, config)
 	outputs, err := loadOutputs(tfmodule, config)
 	if err != nil {
@@ -75,14 +110,15 @@ func loadModuleItems(tfmodule *tfconfig.Module, config *print.Config) (*Module, 
 	resources := loadResources(tfmodule, config)
 
 	return &Module{
-		Header:       header,
-		Footer:       footer,
-		Inputs:       inputs,
-		ModuleCalls:  modulecalls,
-		Outputs:      outputs,
-		Providers:    providers,
-		Requirements: requirements,
-		Resources:    resources,
+		Header:          header,
+		Footer:          footer,
+		Inputs:          inputs,
+		InputAttributes: attributes,
+		ModuleCalls:     modulecalls,
+		Outputs:         outputs,
+		Providers:       providers,
+		Requirements:    requirements,
+		Resources:       resources,
 
 		RequiredInputs: required,
 		OptionalInputs: optional,
@@ -181,13 +217,14 @@ func loadSection(config *print.Config, file string, section string) (string, err
 	return strings.Join(sectionText, "\n"), nil
 }
 
-func loadInputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Input, []*Input, []*Input) {
+func loadInputs(tfmodule *module.Meta, config *print.Config) ([]*Input, []*Input, []*Input, InputAttributes) {
 	var inputs = make([]*Input, 0, len(tfmodule.Variables))
 	var required = make([]*Input, 0, len(tfmodule.Variables))
 	var optional = make([]*Input, 0, len(tfmodule.Variables))
+	var attributes InputAttributes = []*InputAttribute{}
 
-	for _, input := range tfmodule.Variables {
-		comments := loadComments(input.Pos.Filename, input.Pos.Line)
+	for k, input := range tfmodule.Variables {
+		comments := loadComments(input.RangePtr.Filename, input.RangePtr.Start.Line)
 
 		// skip over inputs that are marked as being ignored
 		if strings.Contains(comments, "terraform-docs-ignore") {
@@ -200,16 +237,20 @@ func loadInputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Input, []*I
 			inputDescription = comments
 		}
 
+		if input.Type.IsCollectionType() {
+			if input.Type.ElementType().IsObjectType() {
+				input.Type.ElementType()
+			}
+		}
+
 		i := &Input{
-			Name:        input.Name,
-			Type:        types.TypeOf(input.Type, input.Default),
-			Description: types.String(inputDescription),
-			Default:     types.ValueOf(input.Default),
-			Required:    input.Required,
-			Position: Position{
-				Filename: input.Pos.Filename,
-				Line:     input.Pos.Line,
-			},
+			Name:         k,
+			Type:         input.Type,
+			Description:  types.String(inputDescription),
+			Default:      input.DefaultValue,
+			Required:     input.DefaultValue.Type().Equals(cty.NilType),
+			Position:     Position(input.RangePtr),
+			TypeDefaults: input.TypeDefaults,
 		}
 
 		inputs = append(inputs, i)
@@ -219,9 +260,53 @@ func loadInputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Input, []*I
 		} else {
 			required = append(required, i)
 		}
+
+		if i.Type.IsObjectType() || (i.Type.IsCollectionType() && i.Type.ElementType().IsObjectType()) {
+			attributes.Append(loadInputAttributes(i.Attribute())...)
+		}
 	}
 
-	return inputs, required, optional
+	return inputs, required, optional, attributes
+}
+
+func loadInputAttributes(input *InputAttribute) []*InputAttribute {
+	var attributes = make([]*InputAttribute, 0)
+
+	if input.Type.IsObjectType() {
+		for key, attribute := range input.Type.AttributeTypes() {
+
+			nestedAttribute := InputAttribute{
+				Name:     key,
+				Type:     attribute,
+				Default:  input.Default.GetAttr(key),
+				Required: input.Type.AttributeOptional(key),
+			}
+
+			if typeDefaults, okay := input.TypeDefaults.Children[key]; okay {
+				nestedAttribute.TypeDefaults = typeDefaults
+			}
+
+			if nestedDefault, okay := input.TypeDefaults.DefaultValues[key]; okay {
+				nestedAttribute.Default = nestedDefault
+			}
+
+			attributes = append(attributes, &nestedAttribute)
+
+			if nestedAttribute.Type.IsObjectType() {
+				nestedAttributes := loadInputAttributes(&nestedAttribute)
+				attributes = append(attributes, nestedAttributes...)
+			}
+
+			if nestedAttribute.Type.IsCollectionType() {
+				if nestedAttribute.Type.ElementType().IsObjectType() {
+					nestedAttributes := loadInputAttributes(&nestedAttribute)
+					attributes = append(attributes, nestedAttributes...)
+				}
+			}
+		}
+	}
+
+	return attributes
 }
 
 func formatSource(s, v string) (source, version string) {
@@ -247,12 +332,11 @@ func formatSource(s, v string) (source, version string) {
 	return source, version
 }
 
-func loadModulecalls(tfmodule *tfconfig.Module, config *print.Config) []*ModuleCall {
+func loadModulecalls(tfmodule *module.Meta, config *print.Config) []*ModuleCall {
 	var modules = make([]*ModuleCall, 0)
-	var source, version string
 
 	for _, m := range tfmodule.ModuleCalls {
-		comments := loadComments(m.Pos.Filename, m.Pos.Line)
+		comments := loadComments(m.RangePtr.Filename, m.RangePtr.Start.Line)
 
 		// skip over modules that are marked as being ignored
 		if strings.Contains(comments, "terraform-docs-ignore") {
@@ -264,23 +348,18 @@ func loadModulecalls(tfmodule *tfconfig.Module, config *print.Config) []*ModuleC
 			description = comments
 		}
 
-		source, version = formatSource(m.Source, m.Version)
-
 		modules = append(modules, &ModuleCall{
-			Name:        m.Name,
-			Source:      source,
-			Version:     version,
+			Name:        m.LocalName,
+			Source:      m.SourceAddr.String(),
+			Version:     m.Version.String(),
 			Description: types.String(description),
-			Position: Position{
-				Filename: m.Pos.Filename,
-				Line:     m.Pos.Line,
-			},
+			Position:    Position(m.RangePtr),
 		})
 	}
 	return modules
 }
 
-func loadOutputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Output, error) {
+func loadOutputs(tfmodule *module.Meta, config *print.Config) ([]*Output, error) {
 	outputs := make([]*Output, 0, len(tfmodule.Outputs))
 	values := make(map[string]*output)
 	if config.OutputValues.Enabled {
@@ -290,8 +369,8 @@ func loadOutputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Output, er
 			return nil, err
 		}
 	}
-	for _, o := range tfmodule.Outputs {
-		comments := loadComments(o.Pos.Filename, o.Pos.Line)
+	for key, o := range tfmodule.Outputs {
+		comments := loadComments(o.RangePtr.Filename, o.RangePtr.Start.Line)
 
 		// skip over outputs that are marked as being ignored
 		if strings.Contains(comments, "terraform-docs-ignore") {
@@ -305,25 +384,22 @@ func loadOutputs(tfmodule *tfconfig.Module, config *print.Config) ([]*Output, er
 		}
 
 		output := &Output{
-			Name:        o.Name,
+			Name:        key,
 			Description: types.String(description),
-			Position: Position{
-				Filename: o.Pos.Filename,
-				Line:     o.Pos.Line,
-			},
-			ShowValue: config.OutputValues.Enabled,
+			Position:    Position(o.RangePtr),
+			ShowValue:   config.OutputValues.Enabled,
 		}
 
 		if config.OutputValues.Enabled {
 			if value, ok := values[output.Name]; ok {
 				output.Sensitive = value.Sensitive
-				output.Value = types.ValueOf(value.Value)
+				output.Value = value.Value
 			} else {
-				output.Value = types.ValueOf("null")
+				output.Value = cty.StringVal("null")
 			}
 
 			if output.Sensitive {
-				output.Value = types.ValueOf(`<sensitive>`)
+				output.Value = cty.StringVal(`<sensitive>`)
 			}
 		}
 		outputs = append(outputs, output)
@@ -351,7 +427,7 @@ func loadOutputValues(config *print.Config) (map[string]*output, error) {
 	return terraformOutputs, err
 }
 
-func loadProviders(tfmodule *tfconfig.Module, config *print.Config) []*Provider { //nolint:gocyclo
+func loadProviders(tfmodule *module.Meta, config *print.Config) []*Provider { //nolint:gocyclo
 	// NOTE(khos2ow): this function is over our cyclomatic complexity goal.
 	// Be wary when adding branches, and look for functionality that could
 	// be reasonably moved into an injected dependency.
@@ -380,39 +456,26 @@ func loadProviders(tfmodule *tfconfig.Module, config *print.Config) []*Provider 
 		}
 	}
 
-	resources := []map[string]*tfconfig.Resource{tfmodule.ManagedResources, tfmodule.DataResources}
 	discovered := make(map[string]*Provider)
 
-	for _, resource := range resources {
-		for _, r := range resource {
-			comments := loadComments(r.Pos.Filename, r.Pos.Line)
+	for providerRef, provider := range tfmodule.ProviderReferences {
 
-			// skip over resources that are marked as being ignored
-			if strings.Contains(comments, "terraform-docs-ignore") {
-				continue
-			}
+		var version = ""
+		if l, ok := lock[providerRef.LocalName]; ok {
+			version = l.Version
+		} else if rv, ok := tfmodule.ProviderRequirements[provider]; ok {
+			version = rv.String()
+		}
 
-			var version = ""
-			if l, ok := lock[r.Provider.Name]; ok {
-				version = l.Version
-			} else if rv, ok := tfmodule.RequiredProviders[r.Provider.Name]; ok && len(rv.VersionConstraints) > 0 {
-				version = strings.Join(rv.VersionConstraints, " ")
-			}
+		key := fmt.Sprintf("%s.%s", providerRef.LocalName, providerRef.Alias)
+		if _, ok := discovered[key]; ok {
+			continue
+		}
 
-			key := fmt.Sprintf("%s.%s", r.Provider.Name, r.Provider.Alias)
-			if _, ok := discovered[key]; ok {
-				continue
-			}
-
-			discovered[key] = &Provider{
-				Name:    r.Provider.Name,
-				Alias:   types.String(r.Provider.Alias),
-				Version: types.String(version),
-				Position: Position{
-					Filename: r.Pos.Filename,
-					Line:     r.Pos.Line,
-				},
-			}
+		discovered[key] = &Provider{
+			Name:    providerRef.LocalName,
+			Alias:   types.String(providerRef.Alias),
+			Version: types.String(version),
 		}
 	}
 
@@ -424,79 +487,72 @@ func loadProviders(tfmodule *tfconfig.Module, config *print.Config) []*Provider 
 	return providers
 }
 
-func loadRequirements(tfmodule *tfconfig.Module) []*Requirement {
+func loadRequirements(tfmodule *module.Meta) []*Requirement {
 	var requirements = make([]*Requirement, 0)
-	for _, core := range tfmodule.RequiredCore {
+	for _, core := range tfmodule.CoreRequirements {
 		requirements = append(requirements, &Requirement{
 			Name:    "terraform",
-			Version: types.String(core),
+			Version: types.String(core.String()),
 		})
 	}
 
-	names := make([]string, 0, len(tfmodule.RequiredProviders))
-	for n := range tfmodule.RequiredProviders {
-		names = append(names, n)
+	for k, v := range tfmodule.ProviderRequirements {
+		requirements = append(requirements, &Requirement{
+			Name:    k.ForDisplay(),
+			Version: types.String(v.String()),
+		})
 	}
 
-	sort.Strings(names)
-
-	for _, name := range names {
-		for _, version := range tfmodule.RequiredProviders[name].VersionConstraints {
-			requirements = append(requirements, &Requirement{
-				Name:    name,
-				Version: types.String(version),
-			})
-		}
-	}
 	return requirements
 }
 
-func loadResources(tfmodule *tfconfig.Module, config *print.Config) []*Resource {
-	allResources := []map[string]*tfconfig.Resource{tfmodule.ManagedResources, tfmodule.DataResources}
+func loadResources(tfmodule *module.Meta, config *print.Config) []*Resource {
+
+	// allResources := []map[string]*tfconfig.Resource{tfmodule.ManagedResources, tfmodule.DataResources}
 	discovered := make(map[string]*Resource)
 
-	for _, resource := range allResources {
-		for _, r := range resource {
-			comments := loadComments(r.Pos.Filename, r.Pos.Line)
+	for _, r := range tfmodule.Resources {
+		comments := loadComments(r.RangePtr.Filename, r.RangePtr.Start.Line)
 
-			// skip over resources that are marked as being ignored
-			if strings.Contains(comments, "terraform-docs-ignore") {
-				continue
+		// skip over resources that are marked as being ignored
+		if strings.Contains(comments, "terraform-docs-ignore") {
+			continue
+		}
+
+		var version, source, providerName string
+		if rv, ok := tfmodule.ProviderReferences[r.Provider]; ok {
+			providerName = rv.Type
+
+			if preq, ok := tfmodule.ProviderRequirements[rv]; ok {
+				version = preq.String()
 			}
 
-			var version string
-			if rv, ok := tfmodule.RequiredProviders[r.Provider.Name]; ok {
-				version = resourceVersion(rv.VersionConstraints)
-			}
-
-			var source string
-			if len(tfmodule.RequiredProviders[r.Provider.Name].Source) > 0 {
-				source = tfmodule.RequiredProviders[r.Provider.Name].Source
+			if rv.HasKnownNamespace() {
+				source = fmt.Sprintf("%s/%s", rv.Namespace, rv.Type)
 			} else {
-				source = fmt.Sprintf("%s/%s", "hashicorp", r.Provider.Name)
+				source = fmt.Sprintf("%s/%s", "hashicorp", rv.Type)
 			}
+		} else {
+			providerName = r.Provider.LocalName
+		}
 
-			rType := strings.TrimPrefix(r.Type, r.Provider.Name+"_")
-			key := fmt.Sprintf("%s.%s.%s.%s", r.Provider.Name, r.Mode, rType, r.Name)
+		rType := strings.TrimPrefix(r.Type, providerName+"_")
+		key := fmt.Sprintf("%s.%s.%s.%s", providerName, r.Mode, rType, r.Name)
 
-			description := ""
-			if config.Settings.ReadComments {
-				description = comments
-			}
+		description := ""
+		if config.Settings.ReadComments {
+			description = comments
+		}
 
-			discovered[key] = &Resource{
-				Type:           rType,
-				Name:           r.Name,
-				Mode:           r.Mode.String(),
-				ProviderName:   r.Provider.Name,
-				ProviderSource: source,
-				Version:        types.String(version),
-				Description:    types.String(description),
-				Position: Position{
-					Filename: r.Pos.Filename,
-					Line:     r.Pos.Line,
-				},
-			}
+		discovered[key] = &Resource{
+			Type:           rType,
+			Name:           r.Name,
+			Mode:           r.Mode,
+			ProviderName:   providerName,
+			ProviderSource: source,
+			Version:        types.String(version),
+			Description:    types.String(description),
+			Position:       Position(r.RangePtr),
 		}
 	}
 
@@ -528,6 +584,38 @@ func resourceVersion(constraints []string) string {
 	}
 	return "latest"
 }
+
+// func getLineNum(filename string, variableName string) (int, error) {
+// 	matchStr := `^variable\s+"%s" {$`
+// 	matchRegexp := regexp.MustCompile(matchStr)
+
+// 	f, err := os.Open(filename)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	defer f.Close()
+
+// 	// Splits on newlines by default.
+// 	scanner := bufio.NewScanner(f)
+
+// 	line := 1
+
+// 	// https://golang.org/pkg/bufio/#Scanner.Scan
+// 	for scanner.Scan() {
+
+// 		if found := matchRegexp.Match(scanner.Bytes()); found {
+// 			return line, nil
+// 		}
+
+// 		line++
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		return 0, err
+// 	}
+
+// 	return 0, fmt.Errorf("variable %s not found in %s", variableName, filename)
+// }
 
 func loadComments(filename string, lineNum int) string {
 	lines := reader.Lines{

@@ -11,18 +11,21 @@ the root directory of this source tree.
 package terraform
 
 import (
+	"math/big"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/zclconf/go-cty/cty"
 
 	"github.com/terraform-docs/terraform-docs/internal/types"
 )
 
 func TestInputValue(t *testing.T) {
 	inputName := "input"
-	inputType := types.String("type")
+	inputType := cty.String
 	inputDescr := types.String("description")
-	inputPos := Position{Filename: "foo.tf", Line: 13}
+	inputPos := Position(&hcl.Range{Filename: "foo.tf", Start: hcl.Pos{Line: 13}})
 
 	tests := []struct {
 		name           string
@@ -35,9 +38,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.String,
 				Description: inputDescr,
-				Default:     types.ValueOf(nil),
+				Default:     cty.NilVal,
 				Required:    true,
 				Position:    inputPos,
 			},
@@ -49,9 +52,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.String,
 				Description: inputDescr,
-				Default:     types.ValueOf(nil),
+				Default:     cty.NilVal,
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -63,9 +66,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.Bool,
 				Description: inputDescr,
-				Default:     types.ValueOf(true),
+				Default:     cty.BoolVal(true),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -77,9 +80,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.Bool,
 				Description: inputDescr,
-				Default:     types.ValueOf(false),
+				Default:     cty.BoolVal(false),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -91,9 +94,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.String,
 				Description: inputDescr,
-				Default:     types.ValueOf(""),
+				Default:     cty.StringVal(""),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -107,7 +110,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        inputType,
 				Description: inputDescr,
-				Default:     types.ValueOf("foo"),
+				Default:     cty.StringVal("foo"),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -119,9 +122,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.Number,
 				Description: inputDescr,
-				Default:     types.ValueOf(42),
+				Default:     cty.NumberIntVal(42),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -133,9 +136,9 @@ func TestInputValue(t *testing.T) {
 			name: "input Value and HasDefault",
 			input: Input{
 				Name:        inputName,
-				Type:        inputType,
+				Type:        cty.Number,
 				Description: inputDescr,
-				Default:     types.ValueOf(13.75),
+				Default:     cty.NumberFloatVal(13.75),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -149,7 +152,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        inputType,
 				Description: inputDescr,
-				Default:     types.ValueOf(types.List{"a", "b", "c"}.Underlying()),
+				Default:     cty.ListVal([]cty.Value{cty.StringVal("a"), cty.StringVal("b"), cty.StringVal("c")}),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -163,7 +166,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        inputType,
 				Description: inputDescr,
-				Default:     types.ValueOf(types.List{}.Underlying()),
+				Default:     cty.ListVal([]cty.Value{}),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -177,7 +180,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        inputType,
 				Description: inputDescr,
-				Default:     types.ValueOf(types.Map{"a": 1, "b": 2, "c": 3}.Underlying()),
+				Default:     cty.MapVal(map[string]cty.Value{"a": cty.NumberVal(big.NewFloat(1)), "b": cty.NumberVal(big.NewFloat(2)), "c": cty.NumberVal(big.NewFloat(3))}),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -191,7 +194,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        inputType,
 				Description: inputDescr,
-				Default:     types.ValueOf(types.Map{}.Underlying()),
+				Default:     cty.MapVal(map[string]cty.Value{}),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -250,51 +253,51 @@ func sampleInputs() []*Input {
 	return []*Input{
 		{
 			Name:        "e",
-			Type:        types.String(""),
+			Type:        cty.NilType,
 			Description: types.String("description of e"),
-			Default:     types.ValueOf(true),
+			Default:     cty.BoolVal(true),
 			Required:    false,
-			Position:    Position{Filename: "foo/variables.tf", Line: 35},
+			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 35}}),
 		},
 		{
 			Name:        "a",
-			Type:        types.String("string"),
+			Type:        cty.String,
 			Description: types.String(""),
-			Default:     types.ValueOf("a"),
+			Default:     cty.StringVal("a"),
 			Required:    false,
-			Position:    Position{Filename: "foo/variables.tf", Line: 10},
+			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 10}}),
 		},
 		{
 			Name:        "d",
-			Type:        types.String("string"),
+			Type:        cty.String,
 			Description: types.String("description for d"),
-			Default:     types.ValueOf(nil),
+			Default:     cty.NilVal,
 			Required:    true,
-			Position:    Position{Filename: "foo/variables.tf", Line: 23},
+			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 23}}),
 		},
 		{
 			Name:        "b",
-			Type:        types.String("number"),
+			Type:        cty.Number,
 			Description: types.String("description of b"),
-			Default:     types.ValueOf(nil),
+			Default:     cty.NilVal,
 			Required:    true,
-			Position:    Position{Filename: "foo/variables.tf", Line: 42},
+			Position:    Position(&hcl.Range{Filename: "foo/variables.tf"}),
 		},
 		{
 			Name:        "c",
-			Type:        types.String("list"),
+			Type:        cty.List(cty.String),
 			Description: types.String("description of c"),
-			Default:     types.ValueOf("c"),
+			Default:     cty.StringVal("c"),
 			Required:    false,
-			Position:    Position{Filename: "foo/variables.tf", Line: 51},
+			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 51}}),
 		},
 		{
 			Name:        "f",
-			Type:        types.String("string"),
+			Type:        cty.String,
 			Description: types.String("description of f"),
-			Default:     types.ValueOf(nil),
+			Default:     cty.NilVal,
 			Required:    false,
-			Position:    Position{Filename: "foo/variables.tf", Line: 59},
+			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 59}}),
 		},
 	}
 }

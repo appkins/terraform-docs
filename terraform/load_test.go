@@ -457,9 +457,10 @@ func TestLoadSections(t *testing.T) {
 
 func TestLoadInputs(t *testing.T) {
 	type expected struct {
-		inputs    int
-		requireds int
-		optionals int
+		inputs     int
+		requireds  int
+		optionals  int
+		attributes int
 	}
 	tests := []struct {
 		name     string
@@ -470,36 +471,40 @@ func TestLoadInputs(t *testing.T) {
 			name: "load module inputs from path",
 			path: "full-example",
 			expected: expected{
-				inputs:    7,
-				requireds: 2,
-				optionals: 5,
+				inputs:     7,
+				requireds:  2,
+				optionals:  5,
+				attributes: 0,
 			},
 		},
 		{
 			name: "load module inputs from path",
 			path: "no-required-inputs",
 			expected: expected{
-				inputs:    6,
-				requireds: 0,
-				optionals: 6,
+				inputs:     6,
+				requireds:  0,
+				optionals:  6,
+				attributes: 0,
 			},
 		},
 		{
 			name: "load module inputs from path",
 			path: "no-optional-inputs",
 			expected: expected{
-				inputs:    6,
-				requireds: 6,
-				optionals: 0,
+				inputs:     6,
+				requireds:  6,
+				optionals:  0,
+				attributes: 0,
 			},
 		},
 		{
 			name: "load module inputs from path",
 			path: "no-inputs",
 			expected: expected{
-				inputs:    0,
-				requireds: 0,
-				optionals: 0,
+				inputs:     0,
+				requireds:  0,
+				optionals:  0,
+				attributes: 0,
 			},
 		},
 	}
@@ -509,11 +514,12 @@ func TestLoadInputs(t *testing.T) {
 
 			config := print.NewConfig()
 			module, _ := loadModule(filepath.Join("testdata", tt.path))
-			inputs, requireds, optionals := loadInputs(module, config)
+			inputs, requireds, optionals, attributes := loadInputs(module, config)
 
 			assert.Equal(tt.expected.inputs, len(inputs))
 			assert.Equal(tt.expected.requireds, len(requireds))
 			assert.Equal(tt.expected.optionals, len(optionals))
+			assert.Equal(tt.expected.attributes, len(attributes))
 		})
 	}
 }
@@ -571,7 +577,7 @@ func TestLoadInputsLineEnding(t *testing.T) {
 
 			config := print.NewConfig()
 			module, _ := loadModule(filepath.Join("testdata", tt.path))
-			inputs, _, _ := loadInputs(module, config)
+			inputs, _, _, _ := loadInputs(module, config)
 
 			assert.Equal(1, len(inputs))
 			assert.Equal(tt.expected, string(inputs[0].Description))
@@ -945,7 +951,7 @@ func TestReadComments(t *testing.T) {
 
 			assert.Nil(err)
 
-			inputs, _, _ := loadInputs(module, config)
+			inputs, _, _, _ := loadInputs(module, config)
 			assert.Equal(1, len(inputs))
 			assert.Equal(tt.expected, string(inputs[0].Description))
 

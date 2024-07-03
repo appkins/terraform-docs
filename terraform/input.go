@@ -16,18 +16,32 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hashicorp/hcl/v2/ext/typeexpr"
 	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Input represents a Terraform input.
 type Input struct {
-	Name        string       `json:"name" toml:"name" xml:"name" yaml:"name"`
-	Type        types.String `json:"type" toml:"type" xml:"type" yaml:"type"`
-	Description types.String `json:"description" toml:"description" xml:"description" yaml:"description"`
-	Default     types.Value  `json:"default" toml:"default" xml:"default" yaml:"default"`
-	Required    bool         `json:"required" toml:"required" xml:"required" yaml:"required"`
-	Position    Position     `json:"-" toml:"-" xml:"-" yaml:"-"`
+	Name         string             `json:"name" toml:"name" xml:"name" yaml:"name"`
+	Type         cty.Type           `json:"type" toml:"type" xml:"type" yaml:"type"`
+	Description  types.String       `json:"description" toml:"description" xml:"description" yaml:"description"`
+	Default      cty.Value          `json:"default" toml:"default" xml:"default" yaml:"default"`
+	Required     bool               `json:"required" toml:"required" xml:"required" yaml:"required"`
+	TypeDefaults *typeexpr.Defaults `json:"-" toml:"-" xml:"-" yaml:"-"`
+	Position     Position           `json:"-" toml:"-" xml:"-" yaml:"-"`
+}
+
+func (i *Input) Attribute() *InputAttribute {
+	return &InputAttribute{
+		Name:         i.Name,
+		Type:         i.Type,
+		Description:  i.Description,
+		Default:      i.Default,
+		Required:     i.Required,
+		TypeDefaults: i.TypeDefaults,
+	}
 }
 
 // GetValue returns JSON representation of the 'Default' value, which is an 'interface'.
@@ -54,7 +68,7 @@ func (i *Input) GetValue() string {
 
 // HasDefault indicates if a Terraform variable has a default value set.
 func (i *Input) HasDefault() bool {
-	return i.Default.HasDefault() || !i.Required
+	return !i.Default.Type().Equals(cty.NilType)
 }
 
 func sortInputsByName(x []*Input) {
@@ -75,7 +89,7 @@ func sortInputsByRequired(x []*Input) {
 func sortInputsByPosition(x []*Input) {
 	sort.Slice(x, func(i, j int) bool {
 		if x[i].Position.Filename == x[j].Position.Filename {
-			return x[i].Position.Line < x[j].Position.Line
+			return x[i].Position.Start.Line < x[j].Position.Start.Line
 		}
 		return x[i].Position.Filename < x[j].Position.Filename
 	})
@@ -86,7 +100,7 @@ func sortInputsByType(x []*Input) {
 		if x[i].Type == x[j].Type {
 			return x[i].Name < x[j].Name
 		}
-		return x[i].Type < x[j].Type
+		return x[i].Type.FriendlyName() < x[j].Type.FriendlyName()
 	})
 }
 

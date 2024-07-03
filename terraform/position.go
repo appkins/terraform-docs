@@ -10,8 +10,7 @@ the root directory of this source tree.
 
 package terraform
 
+import "github.com/hashicorp/hcl/v2"
+
 // Position represents position of Terraform item (input, output, provider, etc) in a file.
-type Position struct {
-	Filename string `json:"-" toml:"-" xml:"-" yaml:"-"`
-	Line     int    `json:"-" toml:"-" xml:"-" yaml:"-"`
-}
+type Position *hcl.Range

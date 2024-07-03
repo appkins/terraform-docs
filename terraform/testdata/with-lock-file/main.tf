@@ -29,5 +29,5 @@ module "foo" {
 }
 
 module "foobar" {
-  source  = "git@github.com:module/path?ref=v7.8.9"
+  source = "git@github.com:module/path?ref=v7.8.9"
 }

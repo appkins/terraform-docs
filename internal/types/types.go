@@ -16,6 +16,8 @@ import (
 	"encoding/xml"
 	"reflect"
 	"sort"
+
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Value is a default value of an input or output.
@@ -93,7 +95,9 @@ func TypeOf(t string, v interface{}) String {
 }
 
 // Nil represents a 'nil' value which is marshaled to `null` when empty for JSON and YAML
-type Nil struct{}
+type Nil struct {
+	cty.Value
+}
 
 // HasDefault return false for Nil, because there's no value set for the variable
 func (n Nil) HasDefault() bool {

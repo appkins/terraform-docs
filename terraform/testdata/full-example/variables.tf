@@ -13,11 +13,11 @@ variable "E" {
 
 # A Description
 # in multiple lines
-variable A {}
+variable "A" {}
 
 variable "C" {
   description = "C description"
-  default = "c"
+  default     = "c"
 }
 
 variable "F" {
@@ -32,5 +32,5 @@ variable "G" {
 # terraform-docs-ignore
 variable "ignored" {
   description = "H description"
-  default = null
+  default     = null
 }
