@@ -145,7 +145,7 @@ func sortOutputsByPosition(x []*Output) {
 
 type outputs []*Output
 
-func (oo outputs) sort(enabled bool, by string) { //nolint:unparam
+func (oo outputs) sort(enabled bool, _ string) { //nolint:unparam
 	if !enabled {
 		sortOutputsByPosition(oo)
 	} else {

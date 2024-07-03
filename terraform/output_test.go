@@ -16,7 +16,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/zclconf/go-cty/cty"
 
 	"github.com/terraform-docs/terraform-docs/internal/types"
 )
@@ -360,12 +362,12 @@ func TestOutputMarshalYAML(t *testing.T) {
 func sampleOutputs() []Output {
 	name := "output"
 	description := types.String("description")
-	position := Position{Filename: "foo.tf", Line: 13}
+	position := Position(&hcl.Range{Filename: "foo.tf", Start: hcl.Pos{Line: 13}})
 	return []Output{
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(nil),
+			Value:       cty.NilVal,
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -379,7 +381,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(false),
+			Value:       cty.BoolVal(false),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -387,7 +389,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(""),
+			Value:       cty.StringVal(""),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -395,7 +397,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf("foo"),
+			Value:       cty.StringVal("foo"),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -403,7 +405,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf("this should be hidden"),
+			Value:       cty.StringVal("this should be hidden"),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   false,
@@ -411,7 +413,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf("<sensitive>"),
+			Value:       cty.StringVal("<sensitive>"),
 			Sensitive:   true,
 			Position:    position,
 			ShowValue:   true,
@@ -419,7 +421,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(types.List{"a", "b", "c"}.Underlying()),
+			Value:       cty.ListVal([]cty.Value{cty.StringVal("a"), cty.StringVal("b"), cty.StringVal("c")}),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -427,7 +429,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(types.List{}.Underlying()),
+			Value:       cty.ListValEmpty(cty.String),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -435,7 +437,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(types.Map{"a": 1, "b": 2, "c": 3}.Underlying()),
+			Value:       cty.MapVal(map[string]cty.Value{"a": cty.NumberIntVal(1), "b": cty.NumberIntVal(2), "c": cty.NumberIntVal(3)}),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -443,7 +445,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(types.Map{}.Underlying()),
+			Value:       cty.MapValEmpty(cty.String),
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -451,7 +453,7 @@ func sampleOutputs() []Output {
 		{
 			Name:        name,
 			Description: description,
-			Value:       types.ValueOf(nil),
+			Value:       cty.NilVal,
 			Sensitive:   false,
 			Position:    position,
 			ShowValue:   true,
@@ -496,32 +498,32 @@ func sampleOutputsForSort() []*Output {
 		{
 			Name:        "a",
 			Description: types.String("description of a"),
-			Value:       nil,
-			Position:    Position{Filename: "foo/outputs.tf", Line: 25},
+			Value:       cty.NilVal,
+			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 25}}),
 		},
 		{
 			Name:        "d",
 			Description: types.String("description of d"),
-			Value:       nil,
-			Position:    Position{Filename: "foo/outputs.tf", Line: 10},
+			Value:       cty.NilVal,
+			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 10}}),
 		},
 		{
 			Name:        "e",
 			Description: types.String("description of e"),
-			Value:       nil,
-			Position:    Position{Filename: "foo/outputs.tf", Line: 33},
+			Value:       cty.NilVal,
+			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 33}}),
 		},
 		{
 			Name:        "b",
 			Description: types.String("description of b"),
-			Value:       nil,
-			Position:    Position{Filename: "foo/outputs.tf", Line: 39},
+			Value:       cty.NilVal,
+			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 39}}),
 		},
 		{
 			Name:        "c",
 			Description: types.String("description of c"),
-			Value:       nil,
-			Position:    Position{Filename: "foo/outputs.tf", Line: 42},
+			Value:       cty.NilVal,
+			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 42}}),
 		},
 	}
 }

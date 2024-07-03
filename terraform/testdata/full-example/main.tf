@@ -15,7 +15,10 @@ terraform {
   }
 }
 
-resource "tls_private_key" "baz" {}
+resource "tls_private_key" "baz" {
+    algorithm = "RSA"
+    rsa_bits  = 4096
+}
 
 data "aws_caller_identity" "current" {
   provider = "aws"

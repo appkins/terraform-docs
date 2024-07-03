@@ -52,7 +52,7 @@ func sortModulecallsBySource(x []*ModuleCall) {
 
 func sortModulecallsByPosition(x []*ModuleCall) {
 	sort.Slice(x, func(i, j int) bool {
-		return x[i].Position.Filename < x[j].Position.Filename || x[i].Position.Line < x[j].Position.Line
+		return x[i].Position.Filename < x[j].Position.Filename || x[i].Position.Start.Line < x[j].Position.Start.Line
 	})
 }
 

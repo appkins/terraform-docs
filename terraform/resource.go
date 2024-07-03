@@ -82,7 +82,7 @@ func sortResourcesByType(x []*Resource) {
 
 type resources []*Resource
 
-func (rr resources) sort(enabled bool, by string) { //nolint:unparam
+func (rr resources) sort(_ bool, _ string) { //nolint:unparam
 	// always sort by type
 	sortResourcesByType(rr)
 }

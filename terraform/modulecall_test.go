@@ -13,6 +13,7 @@ package terraform
 import (
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,37 +88,37 @@ func sampleModulecalls() []*ModuleCall {
 			Name:     "a",
 			Source:   "z",
 			Version:  "1.2.3",
-			Position: Position{Filename: "foo/main.tf", Line: 35},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 35}}),
 		},
 		{
 			Name:     "b",
 			Source:   "z",
 			Version:  "1.2.3",
-			Position: Position{Filename: "foo/main.tf", Line: 10},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 10}}),
 		},
 		{
 			Name:     "c",
 			Source:   "m",
 			Version:  "1.2.3",
-			Position: Position{Filename: "foo/main.tf", Line: 23},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 23}}),
 		},
 		{
 			Name:     "e",
 			Source:   "x",
 			Version:  "1.2.3",
-			Position: Position{Filename: "foo/main.tf", Line: 42},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 42}}),
 		},
 		{
 			Name:     "d",
 			Source:   "l",
 			Version:  "1.2.3",
-			Position: Position{Filename: "foo/main.tf", Line: 51},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 51}}),
 		},
 		{
 			Name:     "f",
 			Source:   "a",
 			Version:  "1.2.3",
-			Position: Position{Filename: "foo/main.tf", Line: 59},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 59}}),
 		},
 	}
 }

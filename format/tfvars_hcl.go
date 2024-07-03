@@ -12,7 +12,6 @@ package format
 import (
 	_ "embed" //nolint
 	"fmt"
-	"reflect"
 	"strings"
 	gotemplate "text/template"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/terraform-docs/terraform-docs/template"
 	"github.com/terraform-docs/terraform-docs/terraform"
+	"github.com/zclconf/go-cty/cty"
 )
 
 //go:embed templates/tfvars_hcl.tmpl
@@ -82,9 +82,7 @@ func (h *tfvarsHCL) Generate(module *terraform.Module) error {
 }
 
 func isMultilineFormat(input *terraform.Input) bool {
-	isList := input.Type == "list" || reflect.TypeOf(input.Default).Name() == "List"
-	isMap := input.Type == "map" || reflect.TypeOf(input.Default).Name() == "Map"
-	return (isList || isMap) && input.Default.Length() > 0
+	return (input.Type.IsCollectionType()) && input.Default.Length().GreaterThan(cty.NumberIntVal(0)).True()
 }
 
 func alignments(inputs []*terraform.Input, config *print.Config) {

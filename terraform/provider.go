@@ -45,7 +45,7 @@ func sortProvidersByName(x []*Provider) {
 func sortProvidersByPosition(x []*Provider) {
 	sort.Slice(x, func(i, j int) bool {
 		if x[i].Position.Filename == x[j].Position.Filename {
-			return x[i].Position.Line < x[j].Position.Line
+			return x[i].Position.Start.Line < x[j].Position.Start.Line
 		}
 		return x[i].Position.Filename < x[j].Position.Filename
 	})
@@ -53,7 +53,7 @@ func sortProvidersByPosition(x []*Provider) {
 
 type providers []*Provider
 
-func (pp providers) sort(enabled bool, by string) { //nolint:unparam
+func (pp providers) sort(enabled bool, _ string) { //nolint:unparam
 	if !enabled {
 		sortProvidersByPosition(pp)
 	} else {

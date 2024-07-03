@@ -11,8 +11,6 @@ the root directory of this source tree.
 package terraform
 
 import (
-	"bytes"
-	"encoding/json"
 	"sort"
 	"strings"
 
@@ -20,6 +18,8 @@ import (
 	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/zclconf/go-cty/cty"
+
+	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
 // Input represents a Terraform input.
@@ -48,15 +48,19 @@ func (i *Input) Attribute() *InputAttribute {
 // If 'Default' is a primitive type, the primitive value of 'Default' will be returned
 // and not the JSON formatted of it.
 func (i *Input) GetValue() string {
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetIndent("", "  ")
-	encoder.SetEscapeHTML(false)
-	err := encoder.Encode(i.Default)
+	// var buf bytes.Buffer
+	b, err := ctyjson.Marshal(i.Default, i.Type)
 	if err != nil {
 		panic(err)
 	}
-	value := strings.TrimSpace(buf.String())
+	// encoder := json.NewEncoder(&buf)
+	// encoder.SetIndent("", "  ")
+	// encoder.SetEscapeHTML(false)
+	// err := encoder.Encode(i.Default)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	value := strings.TrimSpace(string(b))
 	if value == `null` {
 		if i.Required {
 			return ""

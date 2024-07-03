@@ -13,6 +13,7 @@ package terraform
 import (
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/terraform-docs/terraform-docs/internal/types"
@@ -28,7 +29,7 @@ func TestProviderName(t *testing.T) {
 				Name:     "provider",
 				Alias:    types.String(""),
 				Version:  types.String(">= 1.2.3"),
-				Position: Position{Filename: "foo.tf", Line: 13},
+				Position: Position(&hcl.Range{Filename: "foo.tf", Start: hcl.Pos{Line: 13}}),
 			},
 			expected: "provider",
 		},
@@ -37,7 +38,7 @@ func TestProviderName(t *testing.T) {
 				Name:     "provider",
 				Alias:    types.String("alias"),
 				Version:  types.String(">= 1.2.3"),
-				Position: Position{Filename: "foo.tf", Line: 13},
+				Position: Position(&hcl.Range{Filename: "foo.tf", Start: hcl.Pos{Line: 13}}),
 			},
 			expected: "provider.alias",
 		},
@@ -88,43 +89,43 @@ func sampleProviders() []*Provider {
 			Name:     "d",
 			Alias:    types.String(""),
 			Version:  types.String("1.3.2"),
-			Position: Position{Filename: "foo/main.tf", Line: 21},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 21}}),
 		},
 		{
 			Name:     "d",
 			Alias:    types.String("a"),
 			Version:  types.String("> 1.x"),
-			Position: Position{Filename: "foo/main.tf", Line: 25},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 25}}),
 		},
 		{
 			Name:     "b",
 			Alias:    types.String(""),
 			Version:  types.String("= 2.1.0"),
-			Position: Position{Filename: "foo/main.tf", Line: 13},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 13}}),
 		},
 		{
 			Name:     "a",
 			Alias:    types.String(""),
 			Version:  types.String(""),
-			Position: Position{Filename: "foo/main.tf", Line: 39},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 39}}),
 		},
 		{
 			Name:     "c",
 			Alias:    types.String(""),
 			Version:  types.String("~> 0.5.0"),
-			Position: Position{Filename: "foo/main.tf", Line: 53},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 53}}),
 		},
 		{
 			Name:     "e",
 			Alias:    types.String(""),
 			Version:  types.String(""),
-			Position: Position{Filename: "foo/main.tf", Line: 47},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 47}}),
 		},
 		{
 			Name:     "e",
 			Alias:    types.String("a"),
 			Version:  types.String("> 1.0"),
-			Position: Position{Filename: "foo/main.tf", Line: 5},
+			Position: Position(&hcl.Range{Filename: "foo/main.tf", Start: hcl.Pos{Line: 5}}),
 		},
 	}
 }

@@ -52,7 +52,10 @@ terraform {
 
 // this description for tls_private_key.baz
 // which can be multiline.
-resource "tls_private_key" "baz" {}
+resource "tls_private_key" "baz" {
+    algorithm = "RSA"
+    rsa_bits  = 4096
+}
 resource "foo_resource" "baz" {}
 
 data "aws_caller_identity" "current" {

@@ -309,29 +309,6 @@ func loadInputAttributes(input *InputAttribute) []*InputAttribute {
 	return attributes
 }
 
-func formatSource(s, v string) (source, version string) {
-	substr := "?ref="
-
-	if v != "" {
-		return s, v
-	}
-
-	pos := strings.LastIndex(s, substr)
-	if pos == -1 {
-		return s, version
-	}
-
-	adjustedPos := pos + len(substr)
-	if adjustedPos >= len(s) {
-		return s, version
-	}
-
-	source = s[0:pos]
-	version = s[adjustedPos:]
-
-	return source, version
-}
-
 func loadModulecalls(tfmodule *module.Meta, config *print.Config) []*ModuleCall {
 	var modules = make([]*ModuleCall, 0)
 
