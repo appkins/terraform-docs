@@ -33,8 +33,8 @@ type Input struct {
 	Position     Position           `json:"-" toml:"-" xml:"-" yaml:"-"`
 }
 
-func (i *Input) Attribute() *InputAttribute {
-	return &InputAttribute{
+func (i Input) Attribute() *Attribute {
+	return &Attribute{
 		Name:         i.Name,
 		Type:         i.Type,
 		Description:  i.Description,

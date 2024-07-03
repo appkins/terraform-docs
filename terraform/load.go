@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-schema/earlydecoder"
 	"github.com/hashicorp/terraform-schema/module"
 	"github.com/zclconf/go-cty/cty"
+	"golang.org/x/exp/slices"
 
 	"github.com/terraform-docs/terraform-docs/internal/reader"
 	"github.com/terraform-docs/terraform-docs/internal/types"
@@ -44,7 +45,7 @@ func LoadWithOptions(config *print.Config) (*Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	sortItems(module, config)
+	// sortItems(module, config)
 	return module, nil
 }
 
@@ -113,7 +114,7 @@ func loadModuleItems(tfmodule *module.Meta, config *print.Config) (*Module, erro
 		Header:          header,
 		Footer:          footer,
 		Inputs:          inputs,
-		InputAttributes: attributes,
+		AttributeGroups: attributes,
 		ModuleCalls:     modulecalls,
 		Outputs:         outputs,
 		Providers:       providers,
@@ -217,11 +218,11 @@ func loadSection(config *print.Config, file string, section string) (string, err
 	return strings.Join(sectionText, "\n"), nil
 }
 
-func loadInputs(tfmodule *module.Meta, config *print.Config) ([]*Input, []*Input, []*Input, InputAttributes) {
+func loadInputs(tfmodule *module.Meta, config *print.Config) ([]*Input, []*Input, []*Input, []*AttributeGroup) {
 	var inputs = make([]*Input, 0, len(tfmodule.Variables))
 	var required = make([]*Input, 0, len(tfmodule.Variables))
 	var optional = make([]*Input, 0, len(tfmodule.Variables))
-	var attributes InputAttributes = []*InputAttribute{}
+	var attributeGroups = make([]*AttributeGroup, 0, 10)
 
 	for k, input := range tfmodule.Variables {
 		comments := loadComments(input.RangePtr.Filename, input.RangePtr.Start.Line)
@@ -262,51 +263,112 @@ func loadInputs(tfmodule *module.Meta, config *print.Config) ([]*Input, []*Input
 		}
 
 		if i.Type.IsObjectType() || (i.Type.IsCollectionType() && i.Type.ElementType().IsObjectType()) {
-			attributes.Append(loadInputAttributes(i.Attribute())...)
+			childAttributes := loadAttributes(i.Name, i.Attribute())
+			attributeGroups = append(attributeGroups, childAttributes...)
 		}
 	}
 
-	return inputs, required, optional, attributes
+	return inputs, required, optional, attributeGroups
 }
 
-func loadInputAttributes(input *InputAttribute) []*InputAttribute {
-	var attributes = make([]*InputAttribute, 0)
+func loadAttributes(parentID string, parent *Attribute) []*AttributeGroup {
+	if !parent.Type.IsObjectType() {
+		return nil
+	}
 
-	if input.Type.IsObjectType() {
-		for key, attribute := range input.Type.AttributeTypes() {
+	id := parentID
+	if id != parent.Name {
+		id += "." + parent.Name
+	}
 
-			nestedAttribute := InputAttribute{
-				Name:     key,
-				Type:     attribute,
-				Default:  input.Default.GetAttr(key),
-				Required: input.Type.AttributeOptional(key),
+	groups := []*AttributeGroup{}
+
+	group := AttributeGroup{
+		ID:           id,
+		Name:         parent.Name,
+		Description:  parent.Description,
+		Attributes:   []*Attribute{},
+		TypeDefaults: parent.TypeDefaults,
+	}
+
+	for key, attrType := range parent.Type.AttributeTypes() {
+
+		required := false
+
+		if parent.Type.IsObjectType() && parent.Type.HasAttribute(key) {
+			required = !parent.Type.AttributeOptional(key)
+		}
+
+		nestedAttribute := Attribute{
+			Name:     key,
+			Type:     attrType,
+			Required: required,
+			Default:  cty.NilVal,
+		}
+
+		if parent.TypeDefaults != nil {
+			if parent.TypeDefaults.Children != nil {
+				if typeDefaults, okay := parent.TypeDefaults.Children[key]; okay {
+					nestedAttribute.TypeDefaults = typeDefaults
+				}
 			}
 
-			if typeDefaults, okay := input.TypeDefaults.Children[key]; okay {
-				nestedAttribute.TypeDefaults = typeDefaults
+			if parent.TypeDefaults.DefaultValues != nil {
+				if nestedDefault, okay := parent.TypeDefaults.DefaultValues[key]; okay {
+					nestedAttribute.Default = nestedDefault
+				}
 			}
+		} else if (parent.Default != cty.NilVal) && (parent.Default.Type().IsObjectType() && parent.Default.Type().HasAttribute(key)) {
+			nestedAttribute.Default = parent.Default.GetAttr(key)
+		}
 
-			if nestedDefault, okay := input.TypeDefaults.DefaultValues[key]; okay {
-				nestedAttribute.Default = nestedDefault
+		group.Attributes = append(group.Attributes, &nestedAttribute)
+
+		if nestedAttribute.Type.IsObjectType() {
+			innerGroup := loadAttributes(id, &nestedAttribute)
+			groups = append(groups, innerGroup...)
+		} else if nestedAttribute.Type.IsCollectionType() {
+			if nestedAttribute.Type.ElementType().IsObjectType() {
+				innerGroup := loadAttributes(id, getElementAttr(nestedAttribute))
+				groups = append(groups, innerGroup...)
 			}
+		}
+	}
 
-			attributes = append(attributes, &nestedAttribute)
+	groups = slices.Insert(groups, 0, &group)
+	return groups
+}
 
-			if nestedAttribute.Type.IsObjectType() {
-				nestedAttributes := loadInputAttributes(&nestedAttribute)
-				attributes = append(attributes, nestedAttributes...)
+func getElementAttr(elem Attribute) *Attribute {
+	if elem.Type.IsCollectionType() {
+		defaultVal := elem.Default
+		if defaultVal.Type().IsCollectionType() {
+			if defaultVal.HasElement(cty.NumberIntVal(0)).True() {
+				defaultVal = defaultVal.Index(cty.NumberIntVal(0))
 			}
-
-			if nestedAttribute.Type.IsCollectionType() {
-				if nestedAttribute.Type.ElementType().IsObjectType() {
-					nestedAttributes := loadInputAttributes(&nestedAttribute)
-					attributes = append(attributes, nestedAttributes...)
+		}
+		if elem.TypeDefaults != nil {
+			if elem.TypeDefaults.DefaultValues != nil {
+				if dv, ok := elem.TypeDefaults.DefaultValues["0"]; ok {
+					elem.TypeDefaults.DefaultValues = dv.AsValueMap()
+				}
+			}
+			if elem.TypeDefaults.Children != nil {
+				if df, ok := elem.TypeDefaults.Children["0"]; ok {
+					elem.TypeDefaults.Children = df.Children
 				}
 			}
 		}
+		return &Attribute{
+			Name:         elem.Name,
+			Type:         elem.Type.ElementType(),
+			Description:  elem.Description,
+			Default:      defaultVal,
+			Required:     elem.Required,
+			TypeDefaults: elem.TypeDefaults,
+		}
 	}
-
-	return attributes
+	return &elem
 }
 
 func loadModulecalls(tfmodule *module.Meta, config *print.Config) []*ModuleCall {

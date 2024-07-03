@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_loadModule(t *testing.T) {
 	type args struct {
@@ -26,6 +28,28 @@ func Test_loadModule(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			loadModule(tt.args.modulePath)
+		})
+	}
+}
+
+func Test_loadWithOptions(t *testing.T) {
+	type args struct {
+		modulePath string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Test 1",
+			args: args{
+				modulePath: "./../../examples",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			loadWithOptions(tt.args.modulePath)
 		})
 	}
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform-schema/earlydecoder"
 	"github.com/hashicorp/terraform-schema/module"
+	"github.com/terraform-docs/terraform-docs/print"
+	"github.com/terraform-docs/terraform-docs/terraform"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
@@ -20,7 +22,9 @@ var (
 func main() {
 	flag.Parse()
 	fmt.Printf("Module path: %s\n", *modulePath)
-	loadModule(*modulePath)
+	// loadModule(*modulePath)
+
+	loadWithOptions(*modulePath)
 }
 
 type VariableType struct {
@@ -30,6 +34,28 @@ type VariableSet struct {
 	ID        string
 	Name      string
 	Variables map[string]module.Variable
+}
+
+func loadWithOptions(modulePath string) {
+	module, err := terraform.LoadWithOptions(&print.Config{
+		ModuleRoot: modulePath,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, grp := range module.AttributeGroups {
+		fmt.Printf("Name: %s\n", grp.Name)
+		fmt.Printf("Description: %s\n", grp.Description)
+		for _, attr := range grp.Attributes {
+			fmt.Printf("Type: %s\n", attr.Type.FriendlyNameForConstraint())
+			fmt.Printf("Description: %s\n", attr.Description)
+			fmt.Printf("Default: %s\n", attr.Default)
+			fmt.Printf("Required: %t\n", attr.Required)
+		}
+		fmt.Println()
+	}
 }
 
 func loadModule(modulePath string) {

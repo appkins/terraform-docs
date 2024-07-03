@@ -14,7 +14,10 @@ variable "object-2" {
     bar = string
   })
   description = "describe your variable"
-  default = null
+  default = {
+    foo = "foo"
+    bar = "bar"
+  }
 }
 
 variable "bool-3" {

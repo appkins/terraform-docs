@@ -6,7 +6,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type InputAttribute struct {
+type Attribute struct {
 	Name         string             `json:"name" toml:"name" xml:"name" yaml:"name"`
 	Type         cty.Type           `json:"type" toml:"type" xml:"type" yaml:"type"`
 	Description  types.String       `json:"description" toml:"description" xml:"description" yaml:"description"`
@@ -15,8 +15,10 @@ type InputAttribute struct {
 	Required     bool               `json:"required" toml:"required" xml:"required" yaml:"required"`
 }
 
-type InputAttributes []*InputAttribute
-
-func (a *InputAttributes) Append(attributes ...*InputAttribute) {
-	*a = append(*a, attributes...)
+type AttributeGroup struct {
+	ID           string             `json:"-" toml:"-" xml:"-" yaml:"-"`
+	Name         string             `json:"name" toml:"name" xml:"name" yaml:"name"`
+	Description  types.String       `json:"description" toml:"description" xml:"description" yaml:"description"`
+	Attributes   []*Attribute       `json:"attributes" toml:"attributes" xml:"attributes>attribute" yaml:"attributes"`
+	TypeDefaults *typeexpr.Defaults `json:"-" toml:"-" xml:"-" yaml:"-"`
 }
