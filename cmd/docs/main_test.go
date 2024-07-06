@@ -53,3 +53,25 @@ func Test_loadWithOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestNewMarkdownDocument(t *testing.T) {
+	type args struct {
+		modulePath string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Test 1",
+			args: args{
+				modulePath: "./../../examples",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			NewMarkdownDocument(tt.args.modulePath)
+		})
+	}
+}

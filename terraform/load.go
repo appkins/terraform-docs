@@ -29,7 +29,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/terraform-docs/terraform-docs/internal/reader"
-	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 )
 
@@ -247,7 +246,7 @@ func loadInputs(tfmodule *module.Meta, config *print.Config) ([]*Input, []*Input
 		i := &Input{
 			Name:         k,
 			Type:         input.Type,
-			Description:  types.String(inputDescription),
+			Description:  string(inputDescription),
 			Default:      input.DefaultValue,
 			Required:     input.DefaultValue.Type().Equals(cty.NilType),
 			Position:     Position(input.RangePtr),
@@ -391,7 +390,7 @@ func loadModulecalls(tfmodule *module.Meta, config *print.Config) []*ModuleCall 
 			Name:        m.LocalName,
 			Source:      m.SourceAddr.String(),
 			Version:     m.Version.String(),
-			Description: types.String(description),
+			Description: string(description),
 			Position:    Position(m.RangePtr),
 		})
 	}
@@ -424,7 +423,7 @@ func loadOutputs(tfmodule *module.Meta, config *print.Config) ([]*Output, error)
 
 		output := &Output{
 			Name:        key,
-			Description: types.String(description),
+			Description: string(description),
 			Position:    Position(o.RangePtr),
 			ShowValue:   config.OutputValues.Enabled,
 		}
@@ -513,8 +512,8 @@ func loadProviders(tfmodule *module.Meta, config *print.Config) []*Provider { //
 
 		discovered[key] = &Provider{
 			Name:    providerRef.LocalName,
-			Alias:   types.String(providerRef.Alias),
-			Version: types.String(version),
+			Alias:   string(providerRef.Alias),
+			Version: string(version),
 		}
 	}
 
@@ -531,14 +530,14 @@ func loadRequirements(tfmodule *module.Meta) []*Requirement {
 	for _, core := range tfmodule.CoreRequirements {
 		requirements = append(requirements, &Requirement{
 			Name:    "terraform",
-			Version: types.String(core.String()),
+			Version: string(core.String()),
 		})
 	}
 
 	for k, v := range tfmodule.ProviderRequirements {
 		requirements = append(requirements, &Requirement{
 			Name:    k.ForDisplay(),
-			Version: types.String(v.String()),
+			Version: string(v.String()),
 		})
 	}
 
@@ -589,8 +588,8 @@ func loadResources(tfmodule *module.Meta, config *print.Config) []*Resource {
 			Mode:           r.Mode,
 			ProviderName:   providerName,
 			ProviderSource: source,
-			Version:        types.String(version),
-			Description:    types.String(description),
+			Version:        string(version),
+			Description:    string(description),
 			Position:       Position(r.RangePtr),
 		}
 	}

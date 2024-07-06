@@ -20,7 +20,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/terraform-docs/terraform-docs/terraform"
 )
@@ -435,8 +434,8 @@ func TestBuiltinFunc(t *testing.T) {
 				var argType reflect.Kind
 				if strings.HasPrefix(tt.funcArgs[i], "\"") {
 					if tt.funcName == "tostring" {
-						argType = reflect.TypeOf(types.String("")).Kind()
-						argv[i] = reflect.ValueOf(types.String(strings.Trim(tt.funcArgs[i], "\"")))
+						argType = reflect.TypeOf(string("")).Kind()
+						argv[i] = reflect.ValueOf(string(strings.Trim(tt.funcArgs[i], "\"")))
 					} else {
 						argType = reflect.String
 						argv[i] = reflect.ValueOf(strings.Trim(tt.funcArgs[i], "\""))

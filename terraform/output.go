@@ -11,42 +11,51 @@ the root directory of this source tree.
 package terraform
 
 import (
-	"bytes"
-	"encoding/json"
 	"encoding/xml"
 	"sort"
 
-	"github.com/terraform-docs/terraform-docs/internal/types"
+	yaml "github.com/zclconf/go-cty-yaml"
 	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/gocty"
+	"github.com/zclconf/go-cty/cty/json"
 )
 
 // Output represents a Terraform output.
 type Output struct {
-	Name        string       `json:"name" toml:"name" xml:"name" yaml:"name"`
-	Description types.String `json:"description" toml:"description" xml:"description" yaml:"description"`
-	Value       cty.Value    `json:"value,omitempty" toml:"value,omitempty" xml:"value,omitempty" yaml:"value,omitempty"`
-	Sensitive   bool         `json:"sensitive,omitempty" toml:"sensitive,omitempty" xml:"sensitive,omitempty" yaml:"sensitive,omitempty"`
-	Position    Position     `json:"-" toml:"-" xml:"-" yaml:"-"`
-	ShowValue   bool         `json:"-" toml:"-" xml:"-" yaml:"-"`
+	Name        string    `json:"name" toml:"name" xml:"name" yaml:"name" cty:"name"`
+	Description string    `json:"description" toml:"description" xml:"description" yaml:"description" cty:"description"`
+	Value       cty.Value `json:"value,omitempty" toml:"value,omitempty" xml:"value,omitempty" yaml:"value,omitempty" cty:"value"`
+	Sensitive   bool      `json:"sensitive,omitempty" toml:"sensitive,omitempty" xml:"sensitive,omitempty" yaml:"sensitive,omitempty" cty:"sensitive"`
+	Position    Position  `json:"-" toml:"-" xml:"-" yaml:"-" cty:"position"`
+	ShowValue   bool      `json:"-" toml:"-" xml:"-" yaml:"-" cty:"show_value"`
 }
 
-type withvalue struct {
-	Name        string       `json:"name" toml:"name" xml:"name" yaml:"name"`
-	Description types.String `json:"description" toml:"description" xml:"description" yaml:"description"`
-	Value       cty.Value    `json:"value" toml:"value" xml:"value" yaml:"value"`
-	Sensitive   bool         `json:"sensitive" toml:"sensitive" xml:"sensitive" yaml:"sensitive"`
-	Position    Position     `json:"-" toml:"-" xml:"-" yaml:"-"`
-	ShowValue   bool         `json:"-" toml:"-" xml:"-" yaml:"-"`
+func (o Output) AsValue() cty.Value {
+	ctyValue, err := gocty.ToCtyValue(o, cty.Object(
+		map[string]cty.Type{
+			"name":        cty.String,
+			"description": cty.String,
+			"value":       cty.DynamicPseudoType,
+			"sensitive":   cty.Bool,
+		}))
+	if err != nil {
+		return cty.NilVal
+	}
+	return ctyValue
+}
+
+func (o Output) String() string {
+	return o.Name
 }
 
 // GetValue returns JSON representation of the 'Value', which is an 'interface'.
 // If 'Value' is a primitive type, the primitive value of 'Value' will be returned
 // and not the JSON formatted of it.
-func (o *Output) GetValue() string {
+func (o Output) GetValue() string {
 	if !o.ShowValue || o.Value.IsNull() {
 		return ""
 	}
-	marshaled, err := json.MarshalIndent(o.Value, "", "  ")
+	marshaled, err := json.Marshal(o.Value, o.Value.Type())
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +67,7 @@ func (o *Output) GetValue() string {
 }
 
 // HasDefault indicates if a Terraform output has a default value set.
-func (o *Output) HasDefault() bool {
+func (o Output) HasDefault() bool {
 	if !o.ShowValue || o.Value.IsNull() {
 		return false
 	}
@@ -69,29 +78,21 @@ func (o *Output) HasDefault() bool {
 // consideration. It means if the flag is not set Value and Sensitive fields are
 // set to 'omitempty', otherwise if output values are being shown 'omitempty' gets
 // explicitly removed to show even empty and false values.
-func (o *Output) MarshalJSON() ([]byte, error) {
-	fn := func(oo interface{}) ([]byte, error) {
-		buf := new(bytes.Buffer)
-		enc := json.NewEncoder(buf)
-		enc.SetEscapeHTML(false)
-		if err := enc.Encode(oo); err != nil {
-			panic(err)
-		}
-		return buf.Bytes(), nil
-	}
+func (o Output) MarshalJSON() ([]byte, error) {
 	if o.ShowValue {
-		return fn(withvalue(*o))
+		o.Value = cty.NullVal(cty.String)
+		o.Sensitive = false
 	}
-	o.Value = cty.NilVal // explicitly make empty
-	o.Sensitive = false  // explicitly make empty
-	return fn(*o)
+	val := o.AsValue()
+
+	return json.Marshal(val, val.Type())
 }
 
 // MarshalXML custom xml marshal function to take '--output-values' flag into
 // consideration. It means if the flag is not set Value and Sensitive fields
 // are set to 'omitempty', otherwise if output values are being shown 'omitempty'
 // gets explicitly removed to show even empty and false values.
-func (o *Output) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (o Output) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	fn := func(v interface{}, name string) error {
 		return e.EncodeElement(v, xml.StartElement{Name: xml.Name{Local: name}})
 	}
@@ -112,13 +113,14 @@ func (o *Output) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 // consideration. It means if the flag is not set Value and Sensitive fields are
 // set to 'omitempty', otherwise if output values are being shown 'omitempty' gets
 // explicitly removed to show even empty and false values.
-func (o *Output) MarshalYAML() (interface{}, error) {
-	if o.ShowValue {
-		return withvalue(*o), nil
+func (o Output) MarshalYAML() (interface{}, error) {
+
+	if !o.ShowValue {
+		o.Value = cty.NullVal(cty.String)
+		o.Sensitive = false
 	}
-	o.Value = cty.NilVal // explicitly make empty
-	o.Sensitive = false  // explicitly make empty
-	return *o, nil
+	val := o.AsValue()
+	return yaml.Marshal(val)
 }
 
 // output is used for unmarshalling `terraform outputs --json` into

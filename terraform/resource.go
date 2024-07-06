@@ -14,20 +14,18 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/terraform-docs/terraform-docs/internal/types"
 )
 
 // Resource represents a managed or data type that is created by the module
 type Resource struct {
-	Type           string       `json:"type" toml:"type" xml:"type" yaml:"type"`
-	Name           string       `json:"name" toml:"name" xml:"name" yaml:"name"`
-	ProviderName   string       `json:"provider" toml:"provider" xml:"provider" yaml:"provider"`
-	ProviderSource string       `json:"source" toml:"source" xml:"source" yaml:"source"`
-	Mode           string       `json:"mode" toml:"mode" xml:"mode" yaml:"mode"`
-	Version        types.String `json:"version" toml:"version" xml:"version" yaml:"version"`
-	Description    types.String `json:"description" toml:"description" xml:"description" yaml:"description"`
-	Position       Position     `json:"-" toml:"-" xml:"-" yaml:"-"`
+	Type           string   `json:"type" toml:"type" xml:"type" yaml:"type"`
+	Name           string   `json:"name" toml:"name" xml:"name" yaml:"name"`
+	ProviderName   string   `json:"provider" toml:"provider" xml:"provider" yaml:"provider"`
+	ProviderSource string   `json:"source" toml:"source" xml:"source" yaml:"source"`
+	Mode           string   `json:"mode" toml:"mode" xml:"mode" yaml:"mode"`
+	Version        string   `json:"version" toml:"version" xml:"version" yaml:"version"`
+	Description    string   `json:"description" toml:"description" xml:"description" yaml:"description"`
+	Position       Position `json:"-" toml:"-" xml:"-" yaml:"-"`
 }
 
 // Spec returns the resource spec addresses a specific resource in the config.

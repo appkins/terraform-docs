@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform-schema/earlydecoder"
 	"github.com/hashicorp/terraform-schema/module"
+	"github.com/terraform-docs/terraform-docs/format"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/terraform-docs/terraform-docs/terraform"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
@@ -36,6 +38,28 @@ type VariableSet struct {
 	Variables map[string]module.Variable
 }
 
+func printCtyType(o terraform.Output) {
+	//val := o.AsValue()
+
+	bn, err := json.Marshal(o)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%s\n", bn)
+
+	b, err := o.MarshalJSON()
+	if err != nil {
+		panic(err)
+	}
+
+	// b, err := ctyjson.Marshal(val, val.Type())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	fmt.Printf("%s", b)
+}
+
 func loadWithOptions(modulePath string) {
 	module, err := terraform.LoadWithOptions(&print.Config{
 		ModuleRoot: modulePath,
@@ -43,6 +67,17 @@ func loadWithOptions(modulePath string) {
 
 	if err != nil {
 		panic(err)
+	}
+
+	for _, oo := range module.Outputs {
+		printCtyType(*oo)
+
+		oos, err := oo.MarshalJSON()
+		if err != nil {
+			fmt.Print(err)
+		} else {
+			fmt.Print(oos)
+		}
 	}
 
 	for _, grp := range module.AttributeGroups {
@@ -56,6 +91,16 @@ func loadWithOptions(modulePath string) {
 		}
 		fmt.Println()
 	}
+}
+
+func NewMarkdownDocument(modulePath string) {
+	ft := format.NewMarkdownDocument(&print.Config{
+		ModuleRoot: modulePath,
+	})
+	fmt.Print(ft.Inputs())
+	fmt.Print(ft.Attributes())
+
+	fmt.Print("Done")
 }
 
 func loadModule(modulePath string) {

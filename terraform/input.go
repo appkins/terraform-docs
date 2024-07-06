@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2/ext/typeexpr"
-	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/zclconf/go-cty/cty"
 
@@ -26,7 +25,7 @@ import (
 type Input struct {
 	Name         string             `json:"name" toml:"name" xml:"name" yaml:"name"`
 	Type         cty.Type           `json:"type" toml:"type" xml:"type" yaml:"type"`
-	Description  types.String       `json:"description" toml:"description" xml:"description" yaml:"description"`
+	Description  string             `json:"description" toml:"description" xml:"description" yaml:"description"`
 	Default      cty.Value          `json:"default" toml:"default" xml:"default" yaml:"default"`
 	Required     bool               `json:"required" toml:"required" xml:"required" yaml:"required"`
 	TypeDefaults *typeexpr.Defaults `json:"-" toml:"-" xml:"-" yaml:"-"`

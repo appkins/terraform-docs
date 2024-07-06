@@ -19,8 +19,6 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/zclconf/go-cty/cty"
-
-	"github.com/terraform-docs/terraform-docs/internal/types"
 )
 
 func TestOutputValue(t *testing.T) {
@@ -361,7 +359,7 @@ func TestOutputMarshalYAML(t *testing.T) {
 
 func sampleOutputs() []Output {
 	name := "output"
-	description := types.String("description")
+	description := string("description")
 	position := Position(&hcl.Range{Filename: "foo.tf", Start: hcl.Pos{Line: 13}})
 	return []Output{
 		{
@@ -497,31 +495,31 @@ func sampleOutputsForSort() []*Output {
 	return []*Output{
 		{
 			Name:        "a",
-			Description: types.String("description of a"),
+			Description: string("description of a"),
 			Value:       cty.NilVal,
 			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 25}}),
 		},
 		{
 			Name:        "d",
-			Description: types.String("description of d"),
+			Description: string("description of d"),
 			Value:       cty.NilVal,
 			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 10}}),
 		},
 		{
 			Name:        "e",
-			Description: types.String("description of e"),
+			Description: string("description of e"),
 			Value:       cty.NilVal,
 			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 33}}),
 		},
 		{
 			Name:        "b",
-			Description: types.String("description of b"),
+			Description: string("description of b"),
 			Value:       cty.NilVal,
 			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 39}}),
 		},
 		{
 			Name:        "c",
-			Description: types.String("description of c"),
+			Description: string("description of c"),
 			Value:       cty.NilVal,
 			Position:    Position(&hcl.Range{Filename: "foo/outputs.tf", Start: hcl.Pos{Line: 42}}),
 		},

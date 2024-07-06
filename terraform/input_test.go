@@ -17,14 +17,12 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/zclconf/go-cty/cty"
-
-	"github.com/terraform-docs/terraform-docs/internal/types"
 )
 
 func TestInputValue(t *testing.T) {
 	inputName := "input"
 	inputType := cty.String
-	inputDescr := types.String("description")
+	inputDescr := string("description")
 	inputPos := Position(&hcl.Range{Filename: "foo.tf", Start: hcl.Pos{Line: 13}})
 
 	tests := []struct {
@@ -40,7 +38,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        cty.String,
 				Description: inputDescr,
-				Default:     cty.NilVal,
+				Default:     cty.NullVal(cty.String),
 				Required:    true,
 				Position:    inputPos,
 			},
@@ -54,7 +52,7 @@ func TestInputValue(t *testing.T) {
 				Name:        inputName,
 				Type:        cty.String,
 				Description: inputDescr,
-				Default:     cty.NilVal,
+				Default:     cty.NullVal(cty.String),
 				Required:    false,
 				Position:    inputPos,
 			},
@@ -254,7 +252,7 @@ func sampleInputs() []*Input {
 		{
 			Name:        "e",
 			Type:        cty.NilType,
-			Description: types.String("description of e"),
+			Description: string("description of e"),
 			Default:     cty.BoolVal(true),
 			Required:    false,
 			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 35}}),
@@ -262,7 +260,7 @@ func sampleInputs() []*Input {
 		{
 			Name:        "a",
 			Type:        cty.String,
-			Description: types.String(""),
+			Description: string(""),
 			Default:     cty.StringVal("a"),
 			Required:    false,
 			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 10}}),
@@ -270,23 +268,23 @@ func sampleInputs() []*Input {
 		{
 			Name:        "d",
 			Type:        cty.String,
-			Description: types.String("description for d"),
-			Default:     cty.NilVal,
+			Description: string("description for d"),
+			Default:     cty.NullVal(cty.String),
 			Required:    true,
 			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 23}}),
 		},
 		{
 			Name:        "b",
 			Type:        cty.Number,
-			Description: types.String("description of b"),
-			Default:     cty.NilVal,
+			Description: string("description of b"),
+			Default:     cty.NullVal(cty.Number),
 			Required:    true,
 			Position:    Position(&hcl.Range{Filename: "foo/variables.tf"}),
 		},
 		{
 			Name:        "c",
 			Type:        cty.List(cty.String),
-			Description: types.String("description of c"),
+			Description: string("description of c"),
 			Default:     cty.StringVal("c"),
 			Required:    false,
 			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 51}}),
@@ -294,8 +292,8 @@ func sampleInputs() []*Input {
 		{
 			Name:        "f",
 			Type:        cty.String,
-			Description: types.String("description of f"),
-			Default:     cty.NilVal,
+			Description: string("description of f"),
+			Default:     cty.NullVal(cty.String),
 			Required:    false,
 			Position:    Position(&hcl.Range{Filename: "foo/variables.tf", Start: hcl.Pos{Line: 59}}),
 		},

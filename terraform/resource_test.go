@@ -14,8 +14,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/terraform-docs/terraform-docs/internal/types"
 )
 
 func TestResourceSpec(t *testing.T) {
@@ -26,7 +24,7 @@ func TestResourceSpec(t *testing.T) {
 		ProviderName:   "tls",
 		ProviderSource: "hashicorp/tls",
 		Mode:           "managed",
-		Version:        types.String("latest"),
+		Version:        "latest",
 	}
 	assert.Equal("tls_private_key.baz", resource.Spec())
 }
@@ -42,7 +40,7 @@ func TestResourceMode(t *testing.T) {
 				ProviderName:   "tls",
 				ProviderSource: "hashicorp/tls",
 				Mode:           "managed",
-				Version:        types.String("latest"),
+				Version:        "latest",
 			},
 			expectValue: "resource",
 		},
@@ -52,7 +50,7 @@ func TestResourceMode(t *testing.T) {
 				ProviderName:   "aws",
 				ProviderSource: "hashicorp/aws",
 				Mode:           "data",
-				Version:        types.String("latest"),
+				Version:        "latest",
 			},
 			expectValue: "data source",
 		},
@@ -62,7 +60,7 @@ func TestResourceMode(t *testing.T) {
 				ProviderName:   "aws",
 				ProviderSource: "hashicorp/aws",
 				Mode:           "",
-				Version:        types.String("latest"),
+				Version:        "latest",
 			},
 			expectValue: "invalid",
 		},
@@ -87,7 +85,7 @@ func TestResourceURL(t *testing.T) {
 				ProviderName:   "tls",
 				ProviderSource: "hashicorp/tls",
 				Mode:           "managed",
-				Version:        types.String("latest"),
+				Version:        "latest",
 			},
 			expectValue: "https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key",
 		},
@@ -97,7 +95,7 @@ func TestResourceURL(t *testing.T) {
 				ProviderName:   "nih",
 				ProviderSource: "http://nih.tld/some/path/to/provider/source",
 				Mode:           "managed",
-				Version:        types.String("latest"),
+				Version:        "latest",
 			},
 			expectValue: "",
 		},

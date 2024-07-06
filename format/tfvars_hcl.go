@@ -15,7 +15,6 @@ import (
 	"strings"
 	gotemplate "text/template"
 
-	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/terraform-docs/terraform-docs/template"
 	"github.com/terraform-docs/terraform-docs/terraform"
@@ -52,7 +51,7 @@ func NewTfvarsHCL(config *print.Config) Type {
 			}
 			return s
 		},
-		"convertToComment": func(s types.String) string {
+		"convertToComment": func(s string) string {
 			return "\n# " + strings.ReplaceAll(string(s), "\n", "\n# ")
 		},
 		"showDescription": func() bool {
@@ -90,7 +89,7 @@ func alignments(inputs []*terraform.Input, config *print.Config) {
 	maxlen := 0
 	index := 0
 	for i, input := range inputs {
-		isDescribed := config.Settings.Description && input.Description.Length() > 0
+		isDescribed := config.Settings.Description && len(input.Description) > 0
 		l := len(input.Name)
 		if isMultilineFormat(input) || isDescribed {
 			for j := index; j < i; j++ {

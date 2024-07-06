@@ -26,6 +26,7 @@ type Type interface {
 	Header() string       // header section based on the underlying format
 	Footer() string       // footer section based on the underlying format
 	Inputs() string       // inputs section based on the underlying format
+	Attributes() string   // attributes section based on the underlying format
 	Modules() string      // modules section based on the underlying format
 	Outputs() string      // outputs section based on the underlying format
 	Providers() string    // providers section based on the underlying format

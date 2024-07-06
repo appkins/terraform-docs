@@ -18,7 +18,6 @@ import (
 
 	sprig "github.com/Masterminds/sprig/v3"
 
-	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/terraform-docs/terraform-docs/terraform"
 )
@@ -162,7 +161,7 @@ func builtinFuncs(config *print.Config) gotemplate.FuncMap { // nolint:gocyclo
 			}
 			return falseValue
 		},
-		"tostring": func(s types.String) string {
+		"tostring": func(s string) string {
 			return string(s)
 		},
 

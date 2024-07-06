@@ -52,6 +52,13 @@ func withInputs(inputs string) generateFunc {
 	}
 }
 
+// withAttributes specifies how the generator should add Attributes.
+func withAttributes(attributes string) generateFunc {
+	return func(g *generator) {
+		g.attributes = attributes
+	}
+}
+
 // withModules specifies how the generator should add Modules.
 func withModules(modules string) generateFunc {
 	return func(g *generator) {
@@ -117,6 +124,7 @@ type generator struct {
 	header       string
 	footer       string
 	inputs       string
+	attributes   string
 	modules      string
 	outputs      string
 	providers    string
@@ -163,6 +171,9 @@ func (g *generator) Footer() string { return g.footer }
 
 // Inputs returns generted inputs section based on the underlying format.
 func (g *generator) Inputs() string { return g.inputs }
+
+// Attributes returns generted attributes section based on the underlying format.
+func (g *generator) Attributes() string { return g.attributes }
 
 // Modules returns generted modules section based on the underlying format.
 func (g *generator) Modules() string { return g.modules }
@@ -250,6 +261,7 @@ func (g *generator) forEach(render func(string) (string, error)) error {
 		"header":       withHeader,
 		"footer":       withFooter,
 		"inputs":       withInputs,
+		"attributes":   withAttributes, // "attributes" is not a valid section name, but it's used in the custom template "markdown_document
 		"modules":      withModules,
 		"outputs":      withOutputs,
 		"providers":    withProviders,

@@ -15,7 +15,6 @@ import (
 	"net/rpc"
 
 	goplugin "github.com/hashicorp/go-plugin"
-
 	"github.com/terraform-docs/terraform-docs/internal/types"
 )
 
@@ -64,11 +63,13 @@ func (formatter) Client(b *goplugin.MuxBroker, c *rpc.Client) (interface{}, erro
 }
 
 func init() {
-	gob.Register(new(types.Bool))
-	gob.Register(new(types.Empty))
-	gob.Register(new(types.List))
-	gob.Register(new(types.Map))
-	gob.Register(new(types.Nil))
-	gob.Register(new(types.Number))
-	gob.Register(new(types.String))
+	// gob.Register(new(types.Bool))
+	// gob.Register(new(types.Empty))
+	// gob.Register(new(types.List))
+	// gob.Register(new(types.Map))
+	// gob.Register(new(types.Nil))
+	// gob.Register(new(types.Number))
+	gob.Register(new(types.Type))
+	gob.Register(new(types.Value))
+	gob.Register(new(string))
 }
