@@ -106,14 +106,15 @@ func readTemplateItems(efs embed.FS, prefix string) []*template.Item {
 // copySections sets the sections that'll be printed
 func copySections(config *print.Config, src *terraform.Module) *terraform.Module {
 	dest := &terraform.Module{
-		Header:       "",
-		Footer:       "",
-		Inputs:       make([]*terraform.Input, 0),
-		ModuleCalls:  make([]*terraform.ModuleCall, 0),
-		Outputs:      make([]*terraform.Output, 0),
-		Providers:    make([]*terraform.Provider, 0),
-		Requirements: make([]*terraform.Requirement, 0),
-		Resources:    make([]*terraform.Resource, 0),
+		Header:          "",
+		Footer:          "",
+		Inputs:          make([]*terraform.Input, 0),
+		AttributeGroups: make([]*terraform.AttributeGroup, 0),
+		ModuleCalls:     make([]*terraform.ModuleCall, 0),
+		Outputs:         make([]*terraform.Output, 0),
+		Providers:       make([]*terraform.Provider, 0),
+		Requirements:    make([]*terraform.Requirement, 0),
+		Resources:       make([]*terraform.Resource, 0),
 	}
 
 	if config.Sections.Header {
@@ -124,6 +125,9 @@ func copySections(config *print.Config, src *terraform.Module) *terraform.Module
 	}
 	if config.Sections.Inputs {
 		dest.Inputs = src.Inputs
+	}
+	if config.Sections.Attributes {
+		dest.AttributeGroups = src.AttributeGroups
 	}
 	if config.Sections.ModuleCalls {
 		dest.ModuleCalls = src.ModuleCalls

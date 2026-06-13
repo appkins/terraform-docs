@@ -14,6 +14,7 @@ import (
 	"embed"
 	gotemplate "text/template"
 
+	"github.com/terraform-docs/terraform-docs/internal/types"
 	"github.com/terraform-docs/terraform-docs/print"
 	"github.com/terraform-docs/terraform-docs/template"
 	"github.com/terraform-docs/terraform-docs/terraform"
@@ -36,14 +37,19 @@ func NewMarkdownTable(config *print.Config) Type {
 
 	tt := template.New(config, items...)
 	tt.CustomFunc(gotemplate.FuncMap{
-		"type": func(t string) string {
-			inputType, _ := PrintFencedCodeBlock(t, "")
+		"type": func(t types.Type) string {
+			inputType, _ := PrintFencedCodeBlock(t.String(), "")
 			return inputType
 		},
-		"value": func(v string) string {
+		"value": func(v types.Value) string {
 			var result = "n/a"
-			if v != "" {
-				result, _ = PrintFencedCodeBlock(v, "")
+			if !v.IsNull() {
+				b, err := v.MarshalJSON()
+				if err == nil {
+					result = string(b)
+				} else {
+					result, _ = PrintFencedCodeBlock(string(b), "")
+				}
 			}
 			return result
 		},

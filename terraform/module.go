@@ -21,7 +21,7 @@ type Module struct {
 	Header          string            `json:"header" toml:"header" xml:"header" yaml:"header"`
 	Footer          string            `json:"footer" toml:"footer" xml:"footer" yaml:"footer"`
 	Inputs          []*Input          `json:"inputs" toml:"inputs" xml:"inputs>input" yaml:"inputs"`
-	AttributeGroups []*AttributeGroup `json:"input_attributes" toml:"input_attributes" xml:"input_attributes>input_attribute" yaml:"input_attributes"`
+	AttributeGroups []*AttributeGroup `json:"attributes" toml:"attributes" xml:"attributes>attribute" yaml:"attributes"`
 	ModuleCalls     []*ModuleCall     `json:"modules" toml:"modules" xml:"modules>module" yaml:"modules"`
 	Outputs         []*Output         `json:"outputs" toml:"outputs" xml:"outputs>output" yaml:"outputs"`
 	Providers       []*Provider       `json:"providers" toml:"providers" xml:"providers>provider" yaml:"providers"`

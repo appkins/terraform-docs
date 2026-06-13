@@ -29,6 +29,7 @@ func baseSections() print.Config {
 	base.Sections.DataSources = true
 	base.Sections.Header = true
 	base.Sections.Inputs = true
+	base.Sections.Attributes = true
 	base.Sections.ModuleCalls = true
 	base.Sections.Outputs = true
 	base.Sections.Providers = true

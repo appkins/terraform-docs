@@ -130,6 +130,7 @@ type sections struct {
 	Header       bool
 	Footer       bool
 	Inputs       bool
+	Attributes   bool
 	ModuleCalls  bool
 	Outputs      bool
 	Providers    bool
@@ -146,6 +147,7 @@ func defaultSections() sections {
 		Header:       true,
 		Footer:       false,
 		Inputs:       true,
+		Attributes:   true,
 		ModuleCalls:  true,
 		Outputs:      true,
 		Providers:    true,
@@ -424,6 +426,7 @@ func (c *Config) Parse() {
 	c.Sections.DataSources = c.Sections.visibility("data-sources")
 	c.Sections.Header = c.Sections.visibility("header")
 	c.Sections.Inputs = c.Sections.visibility("inputs")
+	c.Sections.Attributes = c.Sections.visibility("attributes")
 	c.Sections.ModuleCalls = c.Sections.visibility("modules")
 	c.Sections.Outputs = c.Sections.visibility("outputs")
 	c.Sections.Providers = c.Sections.visibility("providers")

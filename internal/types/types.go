@@ -2,10 +2,12 @@ package types
 
 import (
 	"encoding/xml"
+	"fmt"
 
 	yaml "github.com/zclconf/go-cty-yaml"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
+	json "github.com/zclconf/go-cty/cty/json"
 )
 
 type Type struct {
@@ -28,6 +30,14 @@ func (v Value) Raw() interface{} {
 	var result interface{}
 	gocty.FromCtyValue(v.Value, &result)
 	return result
+}
+
+func (v Value) MarshalJSON() ([]byte, error) {
+	if v.IsNull() {
+		return []byte(`null`), nil
+	}
+
+	return json.Marshal(v.Value, v.Type())
 }
 
 func (s Value) MarshalYAML() (interface{}, error) {
@@ -104,6 +114,36 @@ func ValueOf(v interface{}, vt *cty.Type) Value {
 }
 
 func (t Type) String() string {
+	switch {
+	case t.Type == cty.DynamicPseudoType:
+		return "any"
+	case t.IsPrimitiveType():
+		switch t.Type {
+		case cty.String:
+			return "string"
+		case cty.Bool:
+			return "bool"
+		case cty.Number:
+			return "number"
+		}
+		return t.FriendlyName()
+	case t.IsCollectionType():
+		switch {
+		case t.IsListType():
+			return fmt.Sprintf("list(%s)", Type{t.ElementType()}.String())
+		case t.IsSetType():
+			return fmt.Sprintf("set(%s)", Type{t.ElementType()}.String())
+		case t.IsMapType():
+			return fmt.Sprintf("map(%s)", Type{t.ElementType()}.String())
+		default:
+			return t.FriendlyName()
+		}
+	case t.IsTupleType():
+		return "tuple"
+	case t.IsObjectType():
+		return "object"
+	}
+
 	if t.IsPrimitiveType() {
 		return t.FriendlyName()
 	}
